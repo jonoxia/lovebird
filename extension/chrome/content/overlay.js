@@ -2,6 +2,8 @@
 var Lovebird_NS = function() {
     // Private stuff goes here:
 
+    let myEmail = "jono@fastmail.fm";
+
     let queryListener = {
 	onItemsAdded: function ql_onItemsAdded(aItems, aCollection) {
 	},
@@ -21,37 +23,35 @@ var Lovebird_NS = function() {
 	/* called when our database query completes */
 	onQueryCompleted: function ql_onQueryCompleted(collection) {
 	    let theList = document.getElementById("lb-main-list");
-	    console.log("Filling box with my delicious life giving seed");
-	    try {
-                while(msg = collection.items.pop()){
+	    // TODO how do I explicitly sort this collection by date?
+	    // that seems to be the default sort so I'll just take
+	    // first item for now...
+            //while(msg = collection.items.pop()){
 
-		    var row = document.createElement('listitem');
-		    var cell = document.createElement('listcell');
-		    cell.setAttribute('label', msg.from);
-		    row.appendChild(cell);
-		    
-		    cell = document.createElement('listcell');
-		    cell.setAttribute('label', msg.subject);
-		    row.appendChild(cell);
-		    
-		    theList.appendChild(row);
+	    var msg = collection.items.pop();
 
-		    /*let item = document.createElement("treeitem");
-		    let row = document.createElement("treerow");
-		    item.appendChild(row);
-		    let cell = document.createElement("treecell");
-		    cell.setAttribute("label",
-				      msg.from);
-		    row.appendChild(cell);
-		    cell = document.createElement("treecell");
-		    cell.setAttribute("label",
-				      msg.subject);
-		    row.appendChild(cell);
-		    container.appendChild(item);*/
-                }
-            } catch (e) {
-		console.log("Error: " + e);
+	    var row = document.createElement('listitem');
+	    var cell = document.createElement('listcell');
+	    if (msg.from.value == myEmail) {
+		// "to" is a list:
+		cell.setAttribute('label',
+				  "Me to " + msg.to[0].value);
+	    } else {
+		cell.setAttribute('label',
+				  msg.from.value + " to me");
 	    }
+
+	    row.appendChild(cell);
+	    
+	    cell = document.createElement('listcell');
+	    cell.setAttribute('label', msg.subject);
+	    row.appendChild(cell);
+	    
+	    cell = document.createElement('listcell');
+	    cell.setAttribute('label', msg.date);
+	    row.appendChild(cell);
+	    
+	    theList.appendChild(row);
 	}
     };
     // Public interface:
@@ -75,10 +75,16 @@ var Lovebird_NS = function() {
 	    // Query for an identity:
 	    var id_q = Gloda.newQuery(Gloda.NOUN_IDENTITY);
 	    id_q.kind("email");
-	    id_q.value("sushux@gmail.com");
+
+	    var myPeeps = ["sushux@gmail.com", "silialek@gmail.com"];
+	    // use "apply" to make each name in myPeeps array an
+	    // argument to id_q.value(). That will result in the
+	    // query doing an OR across all of them.
+	    dump("My peeps are " + myPeeps + "\n");
+	    id_q.value.apply(id_q, myPeeps);
 	    id_coll=id_q.getCollection({
 		onItemsAdded: function _onAdded(aItems,
-						     aCollection) {
+						aCollection) {
 		},
 		onItemsModified: function _onModified(aItems,
 						      aCollection) {
@@ -88,15 +94,15 @@ var Lovebird_NS = function() {
 		},
 		onQueryCompleted: function _onCompleted(id_coll) {
 		    //woops no identity
-		    if (id_coll.items.length <= 0) return;
-               
-		    id=id_coll.items[0];
-		    // OK now we have gloda's ID object.
+		    dump("There are " + id_coll.items.length + " people\n");
+		    // For each person we get back, do a query
+		    // for that person's latest message:
+		    for (var i = 0; i < id_coll.items.length; i++) {
+			let query = Gloda.newQuery(Gloda.NOUN_MESSAGE);
 
-		    // Query for all messages involving this person
-		    let query = Gloda.newQuery(Gloda.NOUN_MESSAGE);
-		    query.involves(id);
-		    let collection = query.getCollection(queryListener);
+			query.involves(id_coll.items[i]);
+			let collection = query.getCollection(queryListener);
+		    }
 		}
 	    });
 	},
