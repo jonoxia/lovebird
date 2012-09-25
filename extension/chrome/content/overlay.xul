@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<overlay id="sample"
+xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+ <script type="application/javascript" src="chrome://lovebird/content/overlay.js"/>
+
+ <menupopup id="taskPopup">
+   <menuitem id="lovebird_OpenWindow"
+	     oncommand="Lovebird_NS.openWindow();"
+	     label="Lovebird"/>
+ </menupopup>
+
+</overlay>

@@ -1,0 +1,2 @@
+content     lovebird    chrome/content/
+overlay chrome://messenger/content/messenger.xul chrome://lovebird/content/overlay.xul

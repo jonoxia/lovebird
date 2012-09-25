@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<!-- Extremely recommended to keep this css include!! -->
+<window id="lovebird-main-window" title="Important People"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+	onload="Lovebird_NS.onLoad();"
+	onunload="Lovebird_NS.onUnload();">
+
+  <script src="chrome://lovebird/content/overlay.js"
+	  type="application/javascript;version=1.8"/>
+
+  <!-- See https://developer.mozilla.org/en-US/docs/XUL/window -->
+  <vbox>
+    <hbox>
+      <description>Important People!</description>
+    </hbox>
+    <groupbox align="start" id="dumb-container">
+      
+    </groupbox>
+  </vbox>
+</window>

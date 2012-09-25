@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+
+<RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+  <Description about="urn:mozilla:install-manifest">
+    <em:id>lovebird@evilbrainjono.net</em:id>
+    <em:version>0.1</em:version>
+    <em:type>2</em:type>
+
+    <!-- Target Application this extension can install into, 
+         with minimum and maximum supported versions. --> 
+    <em:targetApplication>
+      <Description>
+        <em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id>
+        <em:minVersion>3.5</em:minVersion>
+        <em:maxVersion>14.0a1</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+   
+    <!-- Front End MetaData -->
+    <em:name>Lovebird</em:name>
+    <em:description>Email organized around the people you care about.</em:description>
+    <em:creator>Mozilla Corporation</em:creator>
+    <em:homepageURL>http://testpilot.mozillalabs.com/</em:homepageURL>
+    <em:iconURL>chrome://testpilot/skin/testpilot_32x32.png</em:iconURL>
+  </Description>
+</RDF>
