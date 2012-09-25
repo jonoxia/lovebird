@@ -24,10 +24,10 @@ var Lovebird_NS = function() {
 	    try {
                 while(msg = collection.items.pop()){
                     //do something with the messages here
-		    let caption = document.createElement("caption");
-		    caption.setAttribute("label",
+		    let label = document.createElement("label");
+		    label.setAttribute("value",
 					 msg.subject);
-		    container.appendChild(caption);
+		    container.appendChild(label);
                 }
             } catch (e) {}  
 	}

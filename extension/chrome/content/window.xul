@@ -4,18 +4,21 @@
 <window id="lovebird-main-window" title="Important People"
         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
 	onload="Lovebird_NS.onLoad();"
-	onunload="Lovebird_NS.onUnload();">
+	onunload="Lovebird_NS.onUnload();"
+	width="800"
+	height="600">
 
   <script src="chrome://lovebird/content/overlay.js"
 	  type="application/javascript;version=1.8"/>
 
   <!-- See https://developer.mozilla.org/en-US/docs/XUL/window -->
   <vbox>
-    <hbox>
+    <hbox flex="1">
       <description>Important People!</description>
     </hbox>
-    <groupbox align="start" id="dumb-container">
+
+    <vbox flex="9" style="overflow:scroll" id="dumb-container">
+    </vbox>
       
-    </groupbox>
   </vbox>
 </window>
