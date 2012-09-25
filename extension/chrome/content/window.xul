@@ -12,13 +12,18 @@
 	  type="application/javascript;version=1.8"/>
 
   <!-- See https://developer.mozilla.org/en-US/docs/XUL/window -->
-  <vbox>
-    <hbox flex="1">
-      <description>Important People!</description>
-    </hbox>
+  <vbox flex="1">
 
-    <vbox flex="9" style="overflow:scroll" id="dumb-container">
-    </vbox>
-      
+    <listbox flex="1" id="lb-main-list" width="400">
+      <listhead>
+	<listheader label="Sender" width="240"/>
+	<listheader label="Subject" width="150"/>
+      </listhead>
+      <listcols>
+	<listcol/>
+	<listcol flex="1"/>
+      </listcols>
+    </listbox>
+
   </vbox>
 </window>

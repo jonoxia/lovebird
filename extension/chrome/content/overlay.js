@@ -20,19 +20,40 @@ var Lovebird_NS = function() {
 
 	/* called when our database query completes */
 	onQueryCompleted: function ql_onQueryCompleted(collection) {
-	    let container = document.getElementById("dumb-container");
+	    let theList = document.getElementById("lb-main-list");
+	    console.log("Filling box with my delicious life giving seed");
 	    try {
                 while(msg = collection.items.pop()){
-                    //do something with the messages here
-		    let label = document.createElement("label");
-		    label.setAttribute("value",
-					 msg.subject);
-		    container.appendChild(label);
+
+		    var row = document.createElement('listitem');
+		    var cell = document.createElement('listcell');
+		    cell.setAttribute('label', msg.from);
+		    row.appendChild(cell);
+		    
+		    cell = document.createElement('listcell');
+		    cell.setAttribute('label', msg.subject);
+		    row.appendChild(cell);
+		    
+		    theList.appendChild(row);
+
+		    /*let item = document.createElement("treeitem");
+		    let row = document.createElement("treerow");
+		    item.appendChild(row);
+		    let cell = document.createElement("treecell");
+		    cell.setAttribute("label",
+				      msg.from);
+		    row.appendChild(cell);
+		    cell = document.createElement("treecell");
+		    cell.setAttribute("label",
+				      msg.subject);
+		    row.appendChild(cell);
+		    container.appendChild(item);*/
                 }
-            } catch (e) {}  
+            } catch (e) {
+		console.log("Error: " + e);
+	    }
 	}
     };
-
     // Public interface:
     return {
 	openWindow: function() {
