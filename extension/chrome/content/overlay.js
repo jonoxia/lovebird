@@ -1,73 +1,8 @@
 // Namespace, to avoid variable name collisions in global namespace
 var Lovebird_NS = function() {
     // Private stuff goes here:
-
-    let Ci = Components.interfaces;
-    let Cc = Components.classes;
-    let Cu = Components.utils;
-
-    let _dirSvc = Cc["@mozilla.org/file/directory_service;1"]
-        .getService(Ci.nsIProperties);
-    let _storSvc = Cc["@mozilla.org/storage/service;1"]
-        .getService(Ci.mozIStorageService);
-    
-    let dbFileName = "lovebird_favorite_people.sql";
-    let dbTableName = "favorite_people";
-    let dbConnection = null;
-
-    /* my schema only has one column (email) for now. */
-    // TODO: Move database handling to a module?
-    let initDb = function() {
-	dump("Initing db\n");
-	let connection = null;
-	// get path to my profile directory / dbFileName:
-	try {
-	    let file = _dirSvc.get("ProfD", Ci.nsIFile);
-	    file.append(dbFileName);
-	    // openDatabase creates the file if it's not there yet:
-	    dump("Opening file.\n");
-	    connection = _storSvc.openDatabase(file);
-	    // Create the table only if it does not already exist:
-	    if(!connection.tableExists(dbTableName)){
-		let schema = "CREATE TABLE " + dbTableName +
-		    " (email TEXT);";
-		dump("Creating table.\n");
-		connection.executeSimpleSQL(schema);
-	    } else{
-		dump("Table exists already.\n");
-	    }
-	    dump("Database initialized OK.\n");
-	} catch(e) {
-	    dump("Error initing database: " + e + "\n");
-	}
-	return connection;
-    };
-
-    dbConnection = initDb(); // Init on startup!
-    // TODO make this idempotent by moving it to a module...
-
-    let getPeeps = function(callback) {
-	if (dbConnection != null && callback != null) {
-	    let selectSql = "SELECT email FROM " + dbTableName + ";";
-	    let selStmt = dbConnection.createStatement(selectSql);
-	    let addresses = [];
-	    selStmt.executeAsync({
-		handleResult: function(aResultSet) {
-		    for (let row = aResultSet.getNextRow(); row;
-			 row = aResultSet.getNextRow()) {
-			addresses.push(row.getUTF8String(0));
-		    }
-		},
-		handleError: function(aError) {
-		    callback(addresses);
-		},
- 		handleCompletion: function(aReason) {
-		    callback(addresses);
-		}
-	    });
-	    selStmt.finalize();
-        }
-    };
+    const Cu = Components.utils;
+    Cu.import("resource://lovebird/modules/name_store.js");
 
     let myEmail = "jono@fastmail.fm";
 
@@ -122,30 +57,6 @@ var Lovebird_NS = function() {
 	}
     };
 
-
-    var lovePeep = function(email) {
-	if (dbConnection != null && email != undefined) {
-	    let insertSql = "INSERT INTO " + dbTableName
-		+ " VALUES (?1);";
-	    let insStmt = dbConnection.createStatement(insertSql);
-	    // TODO make sure this email address isn't already
-	    // in the db before adding it again?
-	    insStmt.params[0] = email;
-	    insStmt.executeAsync({
-		handleResult: function(aResultSet) {
-		},
-		handleError: function(aError) {
-		    dump(aError + "\n");
-		},
-		handleCompletion: function(aReason) {
-		    dump("database insertion complete.\n");
-		}
-	    });
-	    insStmt.finalize();
-	}
-	
-    };
-
     // Public interface:
     return {
 	openWindow: function() {
@@ -163,14 +74,9 @@ var Lovebird_NS = function() {
 	     https://developer.mozilla.org/en-US/docs/Thunderbird/Gloda_examples
 	    */
 
-	    // TODO actually must init this connection on startup
-	    // not on window load, so that you can Luv a person even
-	    // if the window isn't open.
-	    dbConnection = initDb();
-	    
 	    // Read list of lovely peeps from sqlite:
 	    dump("Getting peeps.\n");
-	    getPeeps(function(peeps) {
+	    LovebirdNameStore.getPeeps(function(peeps) {
 		dump("Got peeps.");
 		// Query for an identity for each:
 		var id_q = Gloda.newQuery(Gloda.NOUN_IDENTITY);
@@ -230,7 +136,7 @@ var Lovebird_NS = function() {
 		  onQueryCompleted: function _onCompleted(id_coll) {
 		      var email = id_coll.items[0].from.value;
 		      dump("Luving " + email + "\n");
-		      lovePeep(email);
+		      LovebirdNameStore.rememberPeep(email);
 		  }
 		});
 	}
