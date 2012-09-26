@@ -13,7 +13,6 @@ var Lovebird_NS = function() {
     
     let dbFileName = "lovebird_favorite_people.sql";
     let dbTableName = "favorite_people";
-
     let dbConnection = null;
 
     /* my schema only has one column (email) for now. */
@@ -43,6 +42,9 @@ var Lovebird_NS = function() {
 	}
 	return connection;
     };
+
+    dbConnection = initDb(); // Init on startup!
+    // TODO make this idempotent by moving it to a module...
 
     let getPeeps = function(callback) {
 	if (dbConnection != null && callback != null) {
@@ -119,6 +121,31 @@ var Lovebird_NS = function() {
 	    theList.appendChild(row);
 	}
     };
+
+
+    var lovePeep = function(email) {
+	if (dbConnection != null && email != undefined) {
+	    let insertSql = "INSERT INTO " + dbTableName
+		+ " VALUES (?1);";
+	    let insStmt = dbConnection.createStatement(insertSql);
+	    // TODO make sure this email address isn't already
+	    // in the db before adding it again?
+	    insStmt.params[0] = email;
+	    insStmt.executeAsync({
+		handleResult: function(aResultSet) {
+		},
+		handleError: function(aError) {
+		    dump(aError + "\n");
+		},
+		handleCompletion: function(aReason) {
+		    dump("database insertion complete.\n");
+		}
+	    });
+	    insStmt.finalize();
+	}
+	
+    };
+
     // Public interface:
     return {
 	openWindow: function() {
@@ -183,26 +210,29 @@ var Lovebird_NS = function() {
 	onUnload: function() {
 	},
 
-	lovePeep: function(email) {
-	    if (dbConnection != null) {
-		let insertSql = "INSERT INTO " + dbTableName
-		    + " VALUES (?1);";
-		let insStmt = dbConnection.createStatement(insertSql);
-		// TODO make sure this email address isn't already
-		// in the db before adding it again?
-		insStmt.params[0] = email;
-		insStmt.executeAsync({
-		    handleResult: function(aResultSet) {
-		    },
-		    handleError: function(aError) {
-			dump(aError + "\n");
-		    },
-		    handleCompletion: function(aReason) {
-			dump("database insertion complete.\n");
-		    }
+	contextClick: function(event) {
+	    /* Called when you right-click a message and say 
+	     * "luv this person". Gets email address of sender
+	     * of selected message, adds it to favorites. */
+	    var selectedMsg = gFolderDisplay.selectedMessage;
+	    // this is a nsIMsgDBHdr
+	    Gloda.getMessageCollectionForHeader(selectedMsg,
+		{
+		  onItemsAdded: function _onAdded(aItems,
+						  aCollection) {
+		  },
+		  onItemsModified: function _onModified(aItems,
+							aCollection) {
+		  },
+		  onItemsRemoved: function _onRemoved(aItems,
+						      aCollection) {
+		  },
+		  onQueryCompleted: function _onCompleted(id_coll) {
+		      var email = id_coll.items[0].from.value;
+		      dump("Luving " + email + "\n");
+		      lovePeep(email);
+		  }
 		});
-		insStmt.finalize();
-	    }
 	}
     };
 }();

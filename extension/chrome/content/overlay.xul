@@ -9,4 +9,10 @@ xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 	     label="Lovebird"/>
  </menupopup>
 
+ <!-- add context menu item -->
+ <menupopup id="mailContext">
+   <menuitem id="lovebird_AddPerson"
+	     oncommand="Lovebird_NS.contextClick(event);"
+	     label="Luv this person"/>
+ </menupopup>
 </overlay>
