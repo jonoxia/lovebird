@@ -14,7 +14,8 @@
   <!-- See https://developer.mozilla.org/en-US/docs/XUL/window -->
   <vbox flex="1">
 
-    <listbox flex="1" id="lb-main-list" width="400">
+    <listbox flex="1" id="lb-main-list" width="400"
+	     ondblclick="Lovebird_NS.listDblClick(event);">
       <listhead>
 	<listheader label="Sender"/>
 	<listheader label="Subject"/>

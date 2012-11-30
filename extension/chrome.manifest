@@ -1,2 +1,3 @@
 content     lovebird    chrome/content/
+resource    lovebird    ./
 overlay chrome://messenger/content/messenger.xul chrome://lovebird/content/overlay.xul

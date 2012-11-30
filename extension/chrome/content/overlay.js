@@ -32,6 +32,11 @@ var Lovebird_NS = function() {
 
 	    var msg = collection.items.pop();
 
+	    dump("Debug msg, looking for nsIMsgDbHdr...\n");
+	    for (var prop in msg) {
+		dump("msg[" + prop + "] = " + msg[prop] + "\n");
+	    }
+
 	    var row = document.createElement('listitem');
 	    var cell = document.createElement('listcell');
 	    if (msg.from.value == myEmail) {
@@ -52,6 +57,8 @@ var Lovebird_NS = function() {
 	    cell = document.createElement('listcell');
 	    cell.setAttribute('label', msg.date);
 	    row.appendChild(cell);
+
+	    row.setAttribute("jono_data", msg.folderMessageURI);
 	    
 	    theList.appendChild(row);
 	}
@@ -139,6 +146,48 @@ var Lovebird_NS = function() {
 		      LovebirdNameStore.rememberPeep(email);
 		  }
 		});
+	},
+
+	listDblClick: function(event) {
+	    dump("You dblclicked the list.\n");
+	    dump("Event.originalTarget = " + event.originalTarget + "\n");
+	    let msgUri = event.originalTarget.getAttribute("jono_data");
+	    dump("Original msg uri is " + msgUri + "\n");
+	    //var sURL="mailto:user@domain.com";
+ 
+	    var msgComposeService=
+		Components.classes["@mozilla.org/messengercompose;1"]
+		.getService(Components.interfaces.nsIMsgComposeService);
+ 
+	    // make the URI
+	    var ioService =
+		Components.classes["@mozilla.org/network/io-service;1"]
+		.getService(Components.interfaces.nsIIOService);
+ 
+	    var aURI = ioService.newURI(msgUri, null, null);
+ 
+	    // open new message
+	    //msgComposeService.OpenComposeWindowWithURI (null, aURI);
+	    gMsgCompose.quoteMessage(aURI);
+	    
+	    /*
+	    ComposeMessage(aCompType, Ci.nsIMsgCompFormat.Default, msgHdr.folder, [uri]);*/
+
+	       /*We assume that msgHdr is a nsIMsgDbHdr.
+	        The reply, reply to all, forward links. For reference, start reading
+	       * http://mxr.mozilla.org/comm-central/source/mail/base/content/messageWindow.js#949
+	       * and follow the function definitions. */
+	
+	    /*     let uri = msgHdr.folder.getUriForMsg(msgHdr);
+		   let compose = function compose_ (aCompType, aEvent) {
+		   if (aEvent.shiftKey) {
+		   ComposeMessage(aCompType, Ci.nsIMsgCompFormat.OppositeOfDefault, msgHdr.folder, [uri]);
+		   } else {
+		   ComposeMessage(aCompType, Ci.nsIMsgCompFormat.Default, msgHdr.folder, [uri]);
+		   }
+		   };
+
+ */
 	}
     };
 }();
