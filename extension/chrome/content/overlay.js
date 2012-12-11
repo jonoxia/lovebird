@@ -1,11 +1,54 @@
 // Namespace, to avoid variable name collisions in global namespace
 var Lovebird_NS = function() {
-    // Private stuff goes here:
-    const Cu = Components.utils;
-    Cu.import("resource://lovebird/modules/name_store.js");
+  // Private stuff goes here:
+  const Cu = Components.utils;
+  const Ci = Components.interfaces;
+  const Cc = Components.classes;
+  Cu.import("resource://lovebird/modules/name_store.js");
 
-    let myEmail = "jono@fastmail.fm";
+  let myEmail = "jono@fastmail.fm";
 
+function openReplyWindow(msgUri) {
+    let msgComposeService=
+      Cc["@mozilla.org/messengercompose;1"]
+      .getService(Ci.nsIMsgComposeService);
+    // make the URI object
+    let ioService = Cc["@mozilla.org/network/io-service;1"]
+      .getService(Ci.nsIIOService);
+    let msgURI = ioService.newURI(msgUri, null, null);
+    let messenger = Cc["@mozilla.org/messenger;1"].createInstance(Ci.nsIMessenger);
+    // Get the message database header for the given message uri:
+    let msgDbHdr = messenger.msgHdrFromURI(msgUri);
+    
+    /* We need to provide an identity to define who is replying. Determining
+     * the right identity can be fairly complicated. We'll try several fallbacks
+     * for getting an appropriate identity. This code is a simplification of the
+     * getIdentity functions in mailCommands.js. See
+     * http://mxr.mozilla.org/comm-central/source/mail/base/content/mailCommands.js */
+    let folder = msgDbHdr.folder;
+    let server = folder.server;
+    /* If there was a custom identity for the folder of the original message,
+     * use that. */
+    let identity = folder.customIdentity;
+    let accountManager = Cc["@mozilla.org/messenger/account-manager;1"]
+      .getService(Ci.nsIMsgAccountManager);
+    if (!identity) {
+      // if there are multiple identities on the server, use the first one
+      identity = accountManager.GetIdentitiesForServer(server)
+        .QueryElementAt(0, Ci.nsIMsgIdentity);
+      if (!identity) {
+        // if that still doesn't work, use the default identity.
+        identity = accountManager.defaultAccount.defaultIdentity;
+      }
+    }
+    let msgWindow = Cc["@mozilla.org/messenger/msgwindow;1"]
+      .createInstance(Ci.nsIMsgWindow);
+    msgComposeService.OpenComposeWindow(null, msgDbHdr, msgUri,
+                                        Ci.nsIMsgCompType.Reply,
+                                        Ci.nsIMsgCompFormat.Default,
+                                        identity, msgWindow);
+  }
+  
     let queryListener = {
 	onItemsAdded: function ql_onItemsAdded(aItems, aCollection) {
 	},
@@ -149,45 +192,8 @@ var Lovebird_NS = function() {
 	},
 
 	listDblClick: function(event) {
-	    dump("You dblclicked the list.\n");
-	    dump("Event.originalTarget = " + event.originalTarget + "\n");
-	    let msgUri = event.originalTarget.getAttribute("jono_data");
-	    dump("Original msg uri is " + msgUri + "\n");
-	    //var sURL="mailto:user@domain.com";
- 
-	    var msgComposeService=
-		Components.classes["@mozilla.org/messengercompose;1"]
-		.getService(Components.interfaces.nsIMsgComposeService);
- 
-	    // make the URI
-	    var ioService =
-		Components.classes["@mozilla.org/network/io-service;1"]
-		.getService(Components.interfaces.nsIIOService);
- 
-	    var aURI = ioService.newURI(msgUri, null, null);
- 
-	    // open new message
-	    //msgComposeService.OpenComposeWindowWithURI (null, aURI);
-	    gMsgCompose.quoteMessage(aURI);
-	    
-	    /*
-	    ComposeMessage(aCompType, Ci.nsIMsgCompFormat.Default, msgHdr.folder, [uri]);*/
-
-	       /*We assume that msgHdr is a nsIMsgDbHdr.
-	        The reply, reply to all, forward links. For reference, start reading
-	       * http://mxr.mozilla.org/comm-central/source/mail/base/content/messageWindow.js#949
-	       * and follow the function definitions. */
-	
-	    /*     let uri = msgHdr.folder.getUriForMsg(msgHdr);
-		   let compose = function compose_ (aCompType, aEvent) {
-		   if (aEvent.shiftKey) {
-		   ComposeMessage(aCompType, Ci.nsIMsgCompFormat.OppositeOfDefault, msgHdr.folder, [uri]);
-		   } else {
-		   ComposeMessage(aCompType, Ci.nsIMsgCompFormat.Default, msgHdr.folder, [uri]);
-		   }
-		   };
-
- */
-	}
+	  let msgUri = event.originalTarget.getAttribute("jono_data");
+          openReplyWindow(msgUri);
+        }
     };
 }();
