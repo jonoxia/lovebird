@@ -162,6 +162,7 @@ var Lovebird_NS = function() {
 
 	    // Read list of lovely peeps from sqlite:
 	    dump("Getting peeps.\n");
+            LovebirdNameStore.dedupe();
 	    LovebirdNameStore.getPeeps(function(peeps) {
 		dump("Got peeps.");
 		// Query for an identity for each:

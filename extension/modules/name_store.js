@@ -72,6 +72,18 @@ var LovebirdNameStore = {
 	selStmt.finalize();
     },
 
+    dedupe: function(callback) {
+      this.getPeeps(function(addresses) {
+          for (var i = 0; i < addresses.length; i++) {
+            for (var j = i+1; j < addresses.length; j++) {
+              if (addresses[i] == addresses[j]) {
+                dump("Found duplicate address! " + addresses[i] + "\n")
+              }
+            }
+          }
+        });
+    },
+
     rememberPeep: function(email) {
 	if (!this._dbConnection) {
 	    this._init();
