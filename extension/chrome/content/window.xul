@@ -11,8 +11,31 @@
   <script src="chrome://lovebird/content/overlay.js"
 	  type="application/javascript;version=1.8"/>
 
+    
+
   <!-- See https://developer.mozilla.org/en-US/docs/XUL/window -->
   <vbox flex="1">
+
+    <toolbar id="lovebird-toolbar"
+             class="inline-toolbar chromeclass-toolbar"
+             fullscreentoolbar="true"
+             mode="full">
+         <toolbarbutton id="lb-sortby-oldest"
+                  class="toolbarbutton-1"
+                  label="Oldest"
+                  tooltiptext="Conversations that have gone longest without any message"
+                  oncommand="Lovebird_NS.sortBy('oldest');"/>
+         <toolbarbutton id="lb-sortby-unanswered"
+                  class="toolbarbutton-1"
+                  label="Unanswered"
+                  tooltiptext="Conversations that have gone longest without an answer from you"
+                  oncommand="Lovebird_NS.sortBy('unanswered');"/>
+         <toolbarbutton id="lb-sortby-alphabetical"
+                  class="toolbarbutton-1"
+                  label="Alphabetical"
+                  tooltiptext="Alphabetical by name"
+                  oncommand="Lovebird_NS.sortBy('alphabetical');"/>
+    </toolbar>
 
     <listbox flex="1" id="lb-main-list" width="400"
 	     ondblclick="Lovebird_NS.listDblClick(event);">
