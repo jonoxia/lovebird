@@ -9,6 +9,7 @@ var Lovebird_NS = function() {
   Cu.import("resource://gre/modules/Services.jsm"); // needed for Services.io etc.
 
   let myEmail = "jono@fastmail.fm";
+  let contactListData = [];
 
   function openReplyWindow(msgUri) {
     // make the URI object
@@ -73,6 +74,26 @@ var Lovebird_NS = function() {
     // TODO Improve this page: https://developer.mozilla.org/en-US/docs/Extensions/Thunderbird/HowTos/Common_Thunderbird_Extension_Techniques/Add_New_Tab
   }
   
+  function addRowToList(rowData) {
+    let theList = document.getElementById("lb-main-list");          
+    let row = document.createElement('listitem');
+    let cell = document.createElement('listcell');
+    cell.setAttribute('label', rowData.label);
+    row.appendChild(cell);
+    
+    cell = document.createElement('listcell');
+    cell.setAttribute('label', rowData.subject);
+    row.appendChild(cell);
+    
+    cell = document.createElement('listcell');
+    cell.setAttribute('label', rowData.date);
+    row.appendChild(cell);
+    
+    row.setAttribute("jono_data", rowData.uri);
+    
+    theList.appendChild(row);
+  }
+  
     let queryListener = {
 	onItemsAdded: function ql_onItemsAdded(aItems, aCollection) {
 	},
@@ -91,42 +112,38 @@ var Lovebird_NS = function() {
 
 	/* called when our database query completes */
 	onQueryCompleted: function ql_onQueryCompleted(collection) {
-	    let theList = document.getElementById("lb-main-list");
 	    // TODO how do I explicitly sort this collection by date?
 	    // that seems to be the default sort so I'll just take
 	    // first item for now...
-
-	    var msg = collection.items.pop();
-
-	    /*dump("Debug msg, looking for nsIMsgDbHdr...\n");
+          
+            // TODO this is getting called more than once with the same
+            // message collection?
+	  var msg = collection.items.pop();
+          dump("Got msg from " + msg.from.value + " to " + msg.to[0].value + "\n");
+          
+	  /*dump("Debug msg, looking for nsIMsgDbHdr...\n");
 	    for (var prop in msg) {
-		dump("msg[" + prop + "] = " + msg[prop] + "\n");
+	    dump("msg[" + prop + "] = " + msg[prop] + "\n");
 	    }*/
+          
+          var newRowData = {
+            from: msg.from.value,
+            to: msg.to[0].value,  	    // "to" is a list.
+            subject: msg.subject,
+            date: msg.date,
+            uri: msg.folderMessageURI
+          };
 
-	    var row = document.createElement('listitem');
-	    var cell = document.createElement('listcell');
-	    if (msg.from.value == myEmail) {
-		// "to" is a list:
-		cell.setAttribute('label',
-				  "Me to " + msg.to[0].value);
-	    } else {
-		cell.setAttribute('label',
-				  msg.from.value + " to me");
-	    }
-
-	    row.appendChild(cell);
-	    
-	    cell = document.createElement('listcell');
-	    cell.setAttribute('label', msg.subject);
-	    row.appendChild(cell);
-	    
-	    cell = document.createElement('listcell');
-	    cell.setAttribute('label', msg.date);
-	    row.appendChild(cell);
-
-	    row.setAttribute("jono_data", msg.folderMessageURI);
-	    
-	    theList.appendChild(row);
+          if (newRowData.from == myEmail) {
+            newRowData.label = "Me to " + msg.to[0].value;
+            newRowData.name = msg.to[0].value;
+	  } else {
+	    newRowData.label = msg.from.value + " to me";
+            newRowData.name = msg.from.value;
+	  }
+                   
+          addRowToList(newRowData);
+          contactListData.push(newRowData);
 	}
     };
 
@@ -156,7 +173,7 @@ var Lovebird_NS = function() {
 		 * query doing an OR across all of them. */
 		dump("My peeps are " + peeps + "\n");
 		id_q.value.apply(id_q, peeps);
-		id_coll=id_q.getCollection({
+	      let id_coll=id_q.getCollection({
 		    onItemsAdded: function _onAdded(aItems,
 						    aCollection) {
 		    },
@@ -173,6 +190,7 @@ var Lovebird_NS = function() {
 			// for that person's latest message:
 			for (var i = 0; i < id_coll.items.length; i++) {
 			    let query = Gloda.newQuery(Gloda.NOUN_MESSAGE);
+                            dump("Querying for " + id_coll.items[i] + "\n");
 
 			    query.involves(id_coll.items[i]);
 			    let collection = query.getCollection(queryListener);
@@ -216,17 +234,65 @@ var Lovebird_NS = function() {
         },
 
       sortBy: function(sortOrder) {
+        /* Sort function todos:
+         * can i subtract dates? or are these strings? do i need to make them
+         * into Date objects before comparing?
+         * OK, subtracting Date objects works - but gotta make sure they
+         * is objects and not strings.
+         * can i subtract strings to get alphabetical ordering?
+         * can't subtract strings but can compare with > and <
+         * "b" > "a" is true.
+         * is it return 1 to sort a first or return -1 to sort a first?
+         * i always forget that part.
+         * OK, tests show that return a-b sorts ascending and b-a sorts
+         * that means that if a > b then a-b is positive so returning
+         * positive means put the 2nd argument first returning negative
+         * means put the first argument first
+         * descending.
+         */ 
+        var sortFunction = null;
         switch(sortOrder) {
           case "oldest":
-          dump("Sort by oldest\n");
+          sortFunction = function(a, b) {
+            return a.date - b.date;
+          }
           break;
           case "unanswered":
+          sortFunction = function(a, b) {
+            if (a.from == myEmail && b.from != myEmail) {
+              return 1;
+            } else if (a.from != myEmail && b.from == myEmail) {
+              return -1;
+            } else {
+              return a.date - b.date;
+            }
+          }
           dump("Sort by unanswered\n");
           break;
           case "alphabetical":
           dump("Sort by alphabetical\n");
+          sortFunction = function(a, b) {
+            if (a.name > b.name) {
+              return 1;
+            } else if (b.name > a.name) {
+              return -1;
+            } else {
+              return 0;
+            }
+          }
           break;
         }
-      }
-    };
-}();
+        let theList = document.getElementById("lb-main-list");
+
+        // empty list. Too bad no jquery.
+        while( theList.childNodes.length > 0) {
+          theList.removeChild(theList.childNodes[0]);
+        }
+
+        contactListData.sort(sortFunction);
+        for (var i = 0; i < contactListData.length; i++) {
+          addRowToList(contactListData[i]);
+        }
+      } // end sortBy function
+    }; // end public interface object
+}(); // immediately call function to create namespace object
