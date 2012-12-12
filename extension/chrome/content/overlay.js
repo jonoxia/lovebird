@@ -5,17 +5,14 @@ var Lovebird_NS = function() {
   const Ci = Components.interfaces;
   const Cc = Components.classes;
   Cu.import("resource://lovebird/modules/name_store.js");
+  Cu.import("resource:///modules/mailServices.js"); // needed for MailServices.compose etc.
+  Cu.import("resource://gre/modules/Services.jsm"); // needed for Services.io etc.
 
   let myEmail = "jono@fastmail.fm";
 
-function openReplyWindow(msgUri) {
-    let msgComposeService=
-      Cc["@mozilla.org/messengercompose;1"]
-      .getService(Ci.nsIMsgComposeService);
+  function openReplyWindow(msgUri) {
     // make the URI object
-    let ioService = Cc["@mozilla.org/network/io-service;1"]
-      .getService(Ci.nsIIOService);
-    let msgURI = ioService.newURI(msgUri, null, null);
+    let msgURI = Services.io.newURI(msgUri, null, null);
     let messenger = Cc["@mozilla.org/messenger;1"].createInstance(Ci.nsIMessenger);
     // Get the message database header for the given message uri:
     let msgDbHdr = messenger.msgHdrFromURI(msgUri);
@@ -30,23 +27,21 @@ function openReplyWindow(msgUri) {
     /* If there was a custom identity for the folder of the original message,
      * use that. */
     let identity = folder.customIdentity;
-    let accountManager = Cc["@mozilla.org/messenger/account-manager;1"]
-      .getService(Ci.nsIMsgAccountManager);
     if (!identity) {
       // if there are multiple identities on the server, use the first one
-      identity = accountManager.GetIdentitiesForServer(server)
+      identity = MailServices.accounts.GetIdentitiesForServer(server)
         .QueryElementAt(0, Ci.nsIMsgIdentity);
       if (!identity) {
         // if that still doesn't work, use the default identity.
-        identity = accountManager.defaultAccount.defaultIdentity;
+        identity = MailServices.accounts.defaultAccount.defaultIdentity;
       }
     }
     let msgWindow = Cc["@mozilla.org/messenger/msgwindow;1"]
       .createInstance(Ci.nsIMsgWindow);
-    msgComposeService.OpenComposeWindow(null, msgDbHdr, msgUri,
-                                        Ci.nsIMsgCompType.Reply,
-                                        Ci.nsIMsgCompFormat.Default,
-                                        identity, msgWindow);
+    MailServices.compose.OpenComposeWindow(null, msgDbHdr, msgUri,
+                                           Ci.nsIMsgCompType.Reply,
+                                           Ci.nsIMsgCompFormat.Default,
+                                           identity, msgWindow);
   }
   
     let queryListener = {
