@@ -17,18 +17,20 @@ var Lovebird_NS = function() {
     // Get the message database header for the given message uri:
     let msgDbHdr = messenger.msgHdrFromURI(msgUri);
     
-    /* We need to provide an identity to define who is replying. Determining
-     * the right identity can be fairly complicated. We'll try several fallbacks
-     * for getting an appropriate identity. This code is a simplification of the
+    /* We need to provide an identity to define who is
+     * replying. Determining the right identity can be fairly
+     * complicated. We'll try several fallbacks for getting an
+     * appropriate identity. This code is a simplification of the
      * getIdentity functions in mailCommands.js. See
      * http://mxr.mozilla.org/comm-central/source/mail/base/content/mailCommands.js */
     let folder = msgDbHdr.folder;
     let server = folder.server;
-    /* If there was a custom identity for the folder of the original message,
-     * use that. */
+    /* If there was a custom identity for the folder of the original
+     * message, use that. */
     let identity = folder.customIdentity;
     if (!identity) {
-      // if there are multiple identities on the server, use the first one
+      /* if there are multiple identities on the server, use the first
+       * one */
       identity = MailServices.accounts.GetIdentitiesForServer(server)
         .QueryElementAt(0, Ci.nsIMsgIdentity);
       if (!identity) {
@@ -42,6 +44,33 @@ var Lovebird_NS = function() {
                                            Ci.nsIMsgCompType.Reply,
                                            Ci.nsIMsgCompFormat.Default,
                                            identity, msgWindow);
+  }
+
+  function openLovebirdTab() {
+    // TODO check if tab already open, focus it instead of opening
+    // another!!!
+    let url = "chrome://lovebird/content/window.xul";
+
+    let tabmail = Cc['@mozilla.org/appshell/window-mediator;1']
+      .getService(Ci.nsIWindowMediator)
+      .getMostRecentWindow("mail:3pane")
+      .document.getElementById("tabmail");
+
+    let alreadyOpen = false;
+    for (var i = 0 ; i < tabmail.tabContainer.childNodes.length; i++) {
+      var tab = tabmail.tabContainer.getItemAtIndex(i);
+      if (tab.label == "Lovely People") {
+        alreadyOpen = true;
+        tabmail.switchToTab(tab);
+        break;
+      }
+    }
+    // i notice properties .tabContainer and .switchToTab
+    if (!alreadyOpen) {
+      tabmail.openTab("chromeTab", { chromePage: url });
+    }
+
+    // Improve this page: https://developer.mozilla.org/en-US/docs/Extensions/Thunderbird/HowTos/Common_Thunderbird_Extension_Techniques/Add_New_Tab
   }
   
     let queryListener = {
@@ -66,14 +95,13 @@ var Lovebird_NS = function() {
 	    // TODO how do I explicitly sort this collection by date?
 	    // that seems to be the default sort so I'll just take
 	    // first item for now...
-            //while(msg = collection.items.pop()){
 
 	    var msg = collection.items.pop();
 
-	    dump("Debug msg, looking for nsIMsgDbHdr...\n");
+	    /*dump("Debug msg, looking for nsIMsgDbHdr...\n");
 	    for (var prop in msg) {
 		dump("msg[" + prop + "] = " + msg[prop] + "\n");
-	    }
+	    }*/
 
 	    var row = document.createElement('listitem');
 	    var cell = document.createElement('listcell');
@@ -105,11 +133,7 @@ var Lovebird_NS = function() {
     // Public interface:
     return {
 	openWindow: function() {
-	    var newWindow = window.open(
-		"chrome://lovebird/content/window.xul",
-		"Lovebird_mainWindow",
-		"chrome,titlebar,centerscreen,dialog=no"
-	    );
+          openLovebirdTab();
 	},
 	
 	onLoad: function() {
