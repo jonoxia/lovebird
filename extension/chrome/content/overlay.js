@@ -17,6 +17,23 @@ var Lovebird_NS = function() {
     return array[ array.length - 1];
   }
 
+  function clearList(listElem) {
+    // Remove all <listitem>s (but not other children) from the
+    // list. careful: children is live, removing nodes changes indices.
+    var index = 0;
+    var children = listElem.childNodes;
+    while (index < children.length) {
+      if (!children[index]) {
+        break;
+      }
+      if (children[index].tagName == "listitem") {
+        listElem.removeChild(children[index]);
+      } else {
+        index++;
+      }
+    }
+  }
+
   function openReplyWindow(msgUri) {
     // make the URI object
     let msgURI = Services.io.newURI(msgUri, null, null);
@@ -80,7 +97,7 @@ var Lovebird_NS = function() {
     // TODO Improve this page: https://developer.mozilla.org/en-US/docs/Extensions/Thunderbird/HowTos/Common_Thunderbird_Extension_Techniques/Add_New_Tab
   }
   
-  function addRowToList(personId, latestMsg) {
+  function addRowToPplList(personId, latestMsg) {
     var rowData = {
       from: latestMsg.from.value,
       to: latestMsg.to[0].value,  	    // "to" is a list.
@@ -90,7 +107,7 @@ var Lovebird_NS = function() {
       name: personId.contact.name
     };
     
-    let theList = document.getElementById("lb-main-list");          
+    //let theList = document.getElementById("lb-main-list");
     let row = document.createElement('listitem');
     let cell = document.createElement('listcell');
 
@@ -103,21 +120,21 @@ var Lovebird_NS = function() {
                         personId.contact.name + " to me");
       row.setAttribute("class", "unanswered");
     }
-
-
     row.appendChild(cell);
     
-    cell = document.createElement('listcell');
+    /*cell = document.createElement('listcell');
     cell.setAttribute('label', rowData.subject);
     row.appendChild(cell);
     
     cell = document.createElement('listcell');
     cell.setAttribute('label', rowData.date);
-    row.appendChild(cell);
+    row.appendChild(cell);*/
     
-    row.setAttribute("jono_data", rowData.uri);
-    
-    theList.appendChild(row);
+    row.setAttribute("lb_person_email", personId.value);
+    //row.setAttribute("jono_data", rowData.uri);
+ 
+    let personList = document.getElementById("lb-ppl-list");
+    personList.appendChild(row);
   }
 
   let MyQueryListener = function(personId) {
@@ -142,17 +159,19 @@ var Lovebird_NS = function() {
     /* called when our database query completes */
     onQueryCompleted: function ql_onQueryCompleted(collection) {
       // TODO how do I explicitly sort this collection by date?
-      // that seems to be the default sort.
+      // maybe not needed - that seems to be the default sort.
       
       // store the whole collection in myPeople:
       var email = this.personId.value;
-      myPeople[email].messageCollection = collection;
+      // put it in reverse-chronological, newest first:
+      myPeople[email].history = [];
+      for (var i =0; i < collection.items.length; i++) {
+        myPeople[email].history.unshift(collection.items[i]);
+      }
 
-      // collection should be chronological, so latest is the last one
-      myPeople[email].lastMsg = last(collection.items);
-
-      // add this rew record to lovebird XUL list
-      addRowToList(this.personId, myPeople[email].lastMsg);
+      // add this new record to lovebird XUL list
+      addRowToPplList(this.personId, 
+                      myPeople[email].history[0]);
     }
   };
 
@@ -248,8 +267,38 @@ var Lovebird_NS = function() {
 		});
 	},
 
-	listDblClick: function(event) {
-	  let msgUri = event.originalTarget.getAttribute("jono_data");
+      personListClick: function(event) {
+        let clickedEmail = event.originalTarget.getAttribute("lb_person_email");
+        
+        var msgList = document.getElementById("lb-msg-list");
+        clearList(msgList);
+        
+        var collection = myPeople[clickedEmail].history;
+
+        for (var i = 0; i < collection.length; i++) {
+          var msg = collection[i];
+          let row = document.createElement('listitem');
+          let cell = document.createElement('listcell');
+
+          cell = document.createElement('listcell');
+          cell.setAttribute('label', msg.subject);
+          row.appendChild(cell);
+    
+          cell = document.createElement('listcell');
+          cell.setAttribute('label', msg.date);
+          row.appendChild(cell);
+
+          // store message uri in attribute so double-click handler
+          // can get uri out of click event target
+          row.setAttribute("lb_msg_uri", msg.folderMessageURI);
+ 
+          msgList.appendChild(row);
+        }
+        
+      },
+
+      msgListDblClick: function(event) {
+	  let msgUri = event.originalTarget.getAttribute("lb_msg_uri");
           openReplyWindow(msgUri);
         },
 
@@ -292,27 +341,14 @@ var Lovebird_NS = function() {
           break;
         }
 
-        let theList = document.getElementById("lb-main-list");
-        // Remove all <listitem>s (but not other children) from the
-        // list. careful: list is live, removing nodes changes indices.
-        var index = 0;
-        var children = theList.childNodes;
-        while (index < children.length) {
-          if (!children[index]) {
-            break;
-          }
-          if (children[index].tagName == "listitem") {
-            theList.removeChild(children[index]);
-          } else {
-            index++;
-          }
-        }
+        let theList = document.getElementById("lb-ppl-list");
+        clearList(theList);
 
         // make array to sort out of myPeople (person, lastMsg) tuples
         var arrayToSort = [];
         for (var email in myPeople) {
           arrayToSort.push({personId: myPeople[email].identity,
-                            lastMsg: myPeople[email].lastMsg});
+                            lastMsg: myPeople[email].history[0]});
         }
 
         // sort it according to sort function
@@ -320,8 +356,8 @@ var Lovebird_NS = function() {
 
         // refill list with newly ordered records
         for (var i = 0; i < arrayToSort.length; i++) {
-          addRowToList(arrayToSort[i].personId,
-                       arrayToSort[i].lastMsg);
+          addRowToPplList(arrayToSort[i].personId,
+                          arrayToSort[i].lastMsg);
         }
       } // end sortBy function
     }; // end public interface object

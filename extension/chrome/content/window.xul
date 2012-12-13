@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <!-- Extremely recommended to keep this css include!! -->
+<?xml-stylesheet href="lovebird.css" type="text/css"?>
 <window id="lovebird-main-window" title="Lovely People"
         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
 	onload="Lovebird_NS.onLoad();"
@@ -10,8 +11,6 @@
 
   <script src="chrome://lovebird/content/overlay.js"
 	  type="application/javascript;version=1.8"/>
-
-    
 
   <!-- See https://developer.mozilla.org/en-US/docs/XUL/window -->
   <vbox flex="1">
@@ -37,19 +36,28 @@
                   oncommand="Lovebird_NS.sortBy('alphabetical');"/>
     </toolbar>
 
-    <listbox flex="1" id="lb-main-list" width="400"
-	     ondblclick="Lovebird_NS.listDblClick(event);">
-      <listhead>
-	<listheader label="Sender"/>
-	<listheader label="Subject"/>
-	<listheader label="Date"/>
-      </listhead>
-      <listcols>
-	<listcol flex="1"/>
-	<listcol flex="1"/>
-	<listcol flex="1"/>
-      </listcols>
-    </listbox>
-
+    <hbox flex="1">
+      <listbox flex="1" id="lb-ppl-list"
+               onclick="Lovebird_NS.personListClick(event);">
+        <listhead>
+          <listheader label="Person"/>
+        </listhead>
+        <listcols>
+          <listcol flex="1"/>
+        </listcols>
+      </listbox>
+      
+      <listbox flex="2" id="lb-msg-list" width="400"
+               ondblclick="Lovebird_NS.msgListDblClick(event);">
+        <listhead>
+          <listheader label="Subject"/>
+          <listheader label="Date"/>
+        </listhead>
+        <listcols>
+          <listcol flex="1"/>
+          <listcol flex="1"/>
+        </listcols>
+      </listbox>
+    </hbox>
   </vbox>
 </window>
