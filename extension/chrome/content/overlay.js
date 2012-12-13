@@ -288,10 +288,19 @@ var Lovebird_NS = function() {
         }
 
         let theList = document.getElementById("lb-main-list");
-        // empty list. Too bad no jquery.
-        // BUG: This destroys the column headers which don't reappear
-        while( theList.childNodes.length > 0) {
-          theList.removeChild(theList.childNodes[0]);
+        // Remove all <listitem>s (but not other children) from the
+        // list. careful: list is live, removing nodes changes indices.
+        var index = 0;
+        var children = theList.childNodes;
+        while (index < children.length) {
+          if (!children[index]) {
+            break;
+          }
+          if (children[index].tagName == "listitem") {
+            theList.removeChild(children[index]);
+          } else {
+            index++;
+          }
         }
 
         // make array to sort out of myPeople (person, lastMsg) tuples
