@@ -9,10 +9,13 @@ var Lovebird_NS = function() {
   Cu.import("resource://gre/modules/Services.jsm"); // needed for Services.io etc.
 
   let myEmail = "jono@fastmail.fm";
-  let contactListData = [];
-  // TODO make this into a dictionary keyed on the email address of
-  // the person, and containing the message history AND the identity
-  // object for that person.
+  let myPeople = {};
+  // dictionary keyed on the email address of the person; will contain
+  // identity object and message history for that person.
+
+  function last(array) {
+    return array[ array.length - 1];
+  }
 
   function openReplyWindow(msgUri) {
     // make the URI object
@@ -77,7 +80,22 @@ var Lovebird_NS = function() {
     // TODO Improve this page: https://developer.mozilla.org/en-US/docs/Extensions/Thunderbird/HowTos/Common_Thunderbird_Extension_Techniques/Add_New_Tab
   }
   
-  function addRowToList(rowData) {
+  function addRowToList(personId, latestMsg) {
+    var rowData = {
+      from: latestMsg.from.value,
+      to: latestMsg.to[0].value,  	    // "to" is a list.
+      subject: latestMsg.subject,
+      date: latestMsg.date,
+      uri: latestMsg.folderMessageURI,
+      name: personId.contact.name
+    };
+    
+    if (rowData.from == myEmail) {
+      rowData.label = "Me to " + personId.contact.name;
+    } else {
+      rowData.label = personId.contact.name + " to me";
+    }
+
     let theList = document.getElementById("lb-main-list");          
     let row = document.createElement('listitem');
     let cell = document.createElement('listcell');
@@ -119,44 +137,17 @@ var Lovebird_NS = function() {
     /* called when our database query completes */
     onQueryCompleted: function ql_onQueryCompleted(collection) {
       // TODO how do I explicitly sort this collection by date?
-      // that seems to be the default sort so I'll just take
-      // first item for now...
+      // that seems to be the default sort.
       
-      /*dump("personId object is like...");
-      for (var prop in this.personId) {
-        dump("  " + prop + " = " + this.personId[prop] + "\n");
-      }*/
-      for (var i = 0; i < collection.items.length; i++) {
-        dump("  Got msg from " + collection.items[i].from.value);
-        dump(" to " + collection.items[i].to[0].value + "\n");
-      }
-      var msg = collection.items.pop();
-      /* let's look at the collection we get back, actually.
-       * Becuase of how we're doing the query, it may be that the
-       * top message in collection is one we've already seen.
-       * We should create a data structure keyed by email address
-       * and look for the top message by a person we haven't seen
-       * yet. */
-      
-      var name = this.personId.contact.name;
-      var newRowData = {
-        from: msg.from.value,
-        to: msg.to[0].value,  	    // "to" is a list.
-        subject: msg.subject,
-        date: msg.date,
-        uri: msg.folderMessageURI,
-        name: name
-      };
-      
-      if (newRowData.from == myEmail) {
-        newRowData.label = "Me to " + name
-      } else {
-	newRowData.label = name + " to me";
-      }
-      //dump("Got latest conversation with " + newRowData.name + "\n");
-                   
-      addRowToList(newRowData);
-      contactListData.push(newRowData);
+      // store the whole collection in myPeople:
+      var email = this.personId.value;
+      myPeople[email].messageCollection = collection;
+
+      // collection should be chronological, so latest is the last one
+      myPeople[email].lastMsg = last(collection.items);
+
+      // add this rew record to lovebird XUL list
+      addRowToList(this.personId, myPeople[email].lastMsg);
     }
   };
 
@@ -196,19 +187,29 @@ var Lovebird_NS = function() {
 							aCollection) {
 		    },
 		    onQueryCompleted: function _onCompleted(id_coll) {
-			dump("There are " + id_coll.items.length +
-			     " people\n");
-			// For each person we get back, do a query
-			// for that person's latest message:
-                        for (var i = 0; i < id_coll.items.length; i++) {
-			  let query = Gloda.newQuery(Gloda.NOUN_MESSAGE);
-                          let person = id_coll.items[i];
-                          dump("Querying for " + person + "\n");
-
-			  query.involves(person);
-                          let listener = new MyQueryListener(person);
-			  let clcn = query.getCollection(listener);
-			}
+		      dump("There are " + id_coll.items.length +
+			   " people\n");
+		      // For each person we get back, do a query
+		      // for that person's latest message:
+                      for (var i = 0; i < id_coll.items.length; i++) {
+                        
+                        // Create entry in myPeople for this person
+                        let email = id_coll.items[i].value;
+                        if (!myPeople[email]) {
+                          myPeople[email] = {
+                            identity: id_coll.items[i]
+                          };
+                        }
+                        
+                        // Query for all messages to/from this person
+			let query = Gloda.newQuery(Gloda.NOUN_MESSAGE);
+                        let person = id_coll.items[i];
+                        dump("Querying for " + person + "\n");
+                        
+			query.involves(person);
+                        let listener = new MyQueryListener(person);
+			let clcn = query.getCollection(listener);
+		      }
 		    } // end onQueryCompleted
 		}); // end getCollection
 	    }); // end getPeeps
@@ -255,25 +256,29 @@ var Lovebird_NS = function() {
         switch(sortOrder) {
           case "oldest":
           sortFunction = function(a, b) {
-            return a.date - b.date;
+            return a.lastMsg.date - b.lastMsg.date;
           }
           break;
           case "unanswered":
+          // sort ones where the last message is TO me on top,
+          // where last message is FROM me on the bottom.
           sortFunction = function(a, b) {
-            if (a.from == myEmail && b.from != myEmail) {
+            if (a.lastMsg.from.value == myEmail && 
+                b.lastMsg.from.value != myEmail) {
               return 1;
-            } else if (a.from != myEmail && b.from == myEmail) {
+            } else if (a.lastMsg.from.value != myEmail &&
+                       b.lastMsg.from.value == myEmail) {
               return -1;
             } else {
-              return a.date - b.date;
+              return a.lastMsg.date - b.lastMsg.date;
             }
           }
           break;
           case "alphabetical":
           sortFunction = function(a, b) {
-            if (a.name > b.name) {
+            if (a.personId.contact.name > b.personId.contact.name) {
               return 1;
-            } else if (b.name > a.name) {
+            } else if (b.personId.contact.name > a.personId.contact.name) {
               return -1;
             } else {
               return 0;
@@ -281,16 +286,28 @@ var Lovebird_NS = function() {
           }
           break;
         }
-        let theList = document.getElementById("lb-main-list");
 
+        let theList = document.getElementById("lb-main-list");
         // empty list. Too bad no jquery.
+        // BUG: This destroys the column headers which don't reappear
         while( theList.childNodes.length > 0) {
           theList.removeChild(theList.childNodes[0]);
         }
 
-        contactListData.sort(sortFunction);
-        for (var i = 0; i < contactListData.length; i++) {
-          addRowToList(contactListData[i]);
+        // make array to sort out of myPeople (person, lastMsg) tuples
+        var arrayToSort = [];
+        for (var email in myPeople) {
+          arrayToSort.push({personId: myPeople[email].identity,
+                            lastMsg: myPeople[email].lastMsg});
+        }
+
+        // sort it according to sort function
+        arrayToSort.sort(sortFunction);
+
+        // refill list with newly ordered records
+        for (var i = 0; i < arrayToSort.length; i++) {
+          addRowToList(arrayToSort[i].personId,
+                       arrayToSort[i].lastMsg);
         }
       } // end sortBy function
     }; // end public interface object
