@@ -1,0 +1,11 @@
+listitem.sent {
+    background-color: #b0ffb0;
+}
+
+listitem.unanswered {
+    background-color: #ffb0b0;
+}
+
+listitem.unimportant {
+    background-color: #ffffb0;
+}

@@ -90,16 +90,21 @@ var Lovebird_NS = function() {
       name: personId.contact.name
     };
     
-    if (rowData.from == myEmail) {
-      rowData.label = "Me to " + personId.contact.name;
-    } else {
-      rowData.label = personId.contact.name + " to me";
-    }
-
     let theList = document.getElementById("lb-main-list");          
     let row = document.createElement('listitem');
     let cell = document.createElement('listcell');
-    cell.setAttribute('label', rowData.label);
+
+    if (rowData.from == myEmail) {
+      cell.setAttribute('label',
+                        "Me to " + personId.contact.name);
+      row.setAttribute("class", "sent");
+    } else {
+      cell.setAttribute('label',
+                        personId.contact.name + " to me");
+      row.setAttribute("class", "unanswered");
+    }
+
+
     row.appendChild(cell);
     
     cell = document.createElement('listcell');
