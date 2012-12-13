@@ -10,6 +10,9 @@ var Lovebird_NS = function() {
 
   let myEmail = "jono@fastmail.fm";
   let contactListData = [];
+  // TODO make this into a dictionary keyed on the email address of
+  // the person, and containing the message history AND the identity
+  // object for that person.
 
   function openReplyWindow(msgUri) {
     // make the URI object
@@ -93,59 +96,69 @@ var Lovebird_NS = function() {
     
     theList.appendChild(row);
   }
-  
-    let queryListener = {
-	onItemsAdded: function ql_onItemsAdded(aItems, aCollection) {
-	},
 
-	/* called when items that are already in our collection 
-	 * get re-indexed */
-	onItemsModified: function ql_onItemsModified(aItems,
-						     aCollection) {
-	},
+  let MyQueryListener = function(personId) {
+    this.personId = personId;
+  }
+  MyQueryListener.prototype = {
+    onItemsAdded: function ql_onItemsAdded(aItems, aCollection) {
+    },
 
-	/* called when items that are in our collection are purged 
-	 * from the system */
-	onItemsRemoved: function ql_onItemsRemoved(aItems, 
-						   aCollection) {
-	},
+    /* called when items that are already in our collection 
+     * get re-indexed */
+    onItemsModified: function ql_onItemsModified(aItems,
+						 aCollection) {
+    },
 
-	/* called when our database query completes */
-	onQueryCompleted: function ql_onQueryCompleted(collection) {
-	    // TODO how do I explicitly sort this collection by date?
-	    // that seems to be the default sort so I'll just take
-	    // first item for now...
-          
-            // TODO this is getting called more than once with the same
-            // message collection?
-	  var msg = collection.items.pop();
-          dump("Got msg from " + msg.from.value + " to " + msg.to[0].value + "\n");
-          
-	  /*dump("Debug msg, looking for nsIMsgDbHdr...\n");
-	    for (var prop in msg) {
-	    dump("msg[" + prop + "] = " + msg[prop] + "\n");
-	    }*/
-          
-          var newRowData = {
-            from: msg.from.value,
-            to: msg.to[0].value,  	    // "to" is a list.
-            subject: msg.subject,
-            date: msg.date,
-            uri: msg.folderMessageURI
-          };
+    /* called when items that are in our collection are purged 
+     * from the system */
+    onItemsRemoved: function ql_onItemsRemoved(aItems, 
+					       aCollection) {
+    },
 
-          if (newRowData.from == myEmail) {
-            newRowData.label = "Me to " + msg.to[0].value;
-            newRowData.name = msg.to[0].value;
-	  } else {
-	    newRowData.label = msg.from.value + " to me";
-            newRowData.name = msg.from.value;
-	  }
+    /* called when our database query completes */
+    onQueryCompleted: function ql_onQueryCompleted(collection) {
+      // TODO how do I explicitly sort this collection by date?
+      // that seems to be the default sort so I'll just take
+      // first item for now...
+      
+      /*dump("personId object is like...");
+      for (var prop in this.personId) {
+        dump("  " + prop + " = " + this.personId[prop] + "\n");
+      }*/
+      for (var i = 0; i < collection.items.length; i++) {
+        dump("  Got msg from " + collection.items[i].from.value);
+        dump(" to " + collection.items[i].to[0].value + "\n");
+      }
+      var msg = collection.items.pop();
+      /* let's look at the collection we get back, actually.
+       * Becuase of how we're doing the query, it may be that the
+       * top message in collection is one we've already seen.
+       * We should create a data structure keyed by email address
+       * and look for the top message by a person we haven't seen
+       * yet. */
+      
+      var name = this.personId.contact.name;
+      var newRowData = {
+        from: msg.from.value,
+        to: msg.to[0].value,  	    // "to" is a list.
+        subject: msg.subject,
+        date: msg.date,
+        uri: msg.folderMessageURI,
+        name: name
+      };
+      
+      if (newRowData.from == myEmail) {
+        newRowData.label = "Me to " + name
+      } else {
+	newRowData.label = name + " to me";
+      }
+      //dump("Got latest conversation with " + newRowData.name + "\n");
                    
-          addRowToList(newRowData);
-          contactListData.push(newRowData);
-	}
-    };
+      addRowToList(newRowData);
+      contactListData.push(newRowData);
+    }
+  };
 
     // Public interface:
     return {
@@ -161,10 +174,8 @@ var Lovebird_NS = function() {
 	    */
 
 	    // Read list of lovely peeps from sqlite:
-	    dump("Getting peeps.\n");
             LovebirdNameStore.dedupe();
 	    LovebirdNameStore.getPeeps(function(peeps) {
-		dump("Got peeps.");
 		// Query for an identity for each:
 		var id_q = Gloda.newQuery(Gloda.NOUN_IDENTITY);
 		id_q.kind("email");
@@ -174,7 +185,7 @@ var Lovebird_NS = function() {
 		 * query doing an OR across all of them. */
 		dump("My peeps are " + peeps + "\n");
 		id_q.value.apply(id_q, peeps);
-	      let id_coll=id_q.getCollection({
+              let id_coll=id_q.getCollection({
 		    onItemsAdded: function _onAdded(aItems,
 						    aCollection) {
 		    },
@@ -189,12 +200,14 @@ var Lovebird_NS = function() {
 			     " people\n");
 			// For each person we get back, do a query
 			// for that person's latest message:
-			for (var i = 0; i < id_coll.items.length; i++) {
-			    let query = Gloda.newQuery(Gloda.NOUN_MESSAGE);
-                            dump("Querying for " + id_coll.items[i] + "\n");
+                        for (var i = 0; i < id_coll.items.length; i++) {
+			  let query = Gloda.newQuery(Gloda.NOUN_MESSAGE);
+                          let person = id_coll.items[i];
+                          dump("Querying for " + person + "\n");
 
-			    query.involves(id_coll.items[i]);
-			    let collection = query.getCollection(queryListener);
+			  query.involves(person);
+                          let listener = new MyQueryListener(person);
+			  let clcn = query.getCollection(listener);
 			}
 		    } // end onQueryCompleted
 		}); // end getCollection
@@ -235,22 +248,9 @@ var Lovebird_NS = function() {
         },
 
       sortBy: function(sortOrder) {
-        /* Sort function todos:
-         * can i subtract dates? or are these strings? do i need to make them
-         * into Date objects before comparing?
-         * OK, subtracting Date objects works - but gotta make sure they
-         * is objects and not strings.
-         * can i subtract strings to get alphabetical ordering?
-         * can't subtract strings but can compare with > and <
-         * "b" > "a" is true.
-         * is it return 1 to sort a first or return -1 to sort a first?
-         * i always forget that part.
-         * OK, tests show that return a-b sorts ascending and b-a sorts
-         * that means that if a > b then a-b is positive so returning
-         * positive means put the 2nd argument first returning negative
-         * means put the first argument first
-         * descending.
-         */ 
+        /* Sort function returning positive means put
+         * the 2nd argument first, returning negative means put
+         * the 1st argument first. */ 
         var sortFunction = null;
         switch(sortOrder) {
           case "oldest":
@@ -268,10 +268,8 @@ var Lovebird_NS = function() {
               return a.date - b.date;
             }
           }
-          dump("Sort by unanswered\n");
           break;
           case "alphabetical":
-          dump("Sort by alphabetical\n");
           sortFunction = function(a, b) {
             if (a.name > b.name) {
               return 1;
