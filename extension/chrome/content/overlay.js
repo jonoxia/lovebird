@@ -92,6 +92,31 @@ var Lovebird_NS = function() {
 
     // TODO Improve this page: https://developer.mozilla.org/en-US/docs/Extensions/Thunderbird/HowTos/Common_Thunderbird_Extension_Techniques/Add_New_Tab
   }
+
+  function getMessageBody(msgUri) {
+
+    let msgURI = Services.io.newURI(msgUri, null, null);
+    let messenger = Cc["@mozilla.org/messenger;1"].createInstance(Ci.nsIMessenger);
+    // Get the message database header for the given message uri:
+    let aMessageHeader = messenger.msgHdrFromURI(msgUri);
+
+    let listener = Cc["@mozilla.org/network/sync-stream-listener;1"]
+      .createInstance(Ci.nsISyncStreamListener);
+
+    // does this give us back the original msgUri and if so can we
+    // skip this step?
+    let uri = aMessageHeader.folder.getUriForMsg(aMessageHeader);
+    messenger.messageServiceFromURI(uri)
+      .streamMessage(uri, listener, null, null, false, "");
+    let folder = aMessageHeader.folder;
+    return folder.getMsgTextFromStream(listener.inputStream,
+                                       aMessageHeader.Charset,
+                                     65536,
+                                     32768,
+                                     false,
+                                     true,
+                                     { });
+  }
   
   function addRowToPplList(personId, latestMsg) {
     var rowData = {
@@ -277,6 +302,9 @@ var Lovebird_NS = function() {
           cell.setAttribute('label', msg.date);
           row.appendChild(cell);
 
+          // Other useful properties of msg:
+          // tags, starred, read
+
           // store message uri in attribute so double-click handler
           // can get uri out of click event target
           row.setAttribute("lb_msg_uri", msg.folderMessageURI);
@@ -290,6 +318,18 @@ var Lovebird_NS = function() {
 	  let msgUri = event.originalTarget.getAttribute("lb_msg_uri");
           openReplyWindow(msgUri);
         },
+
+      msgListClick: function(event) {
+        let msgUri = event.originalTarget.getAttribute("lb_msg_uri");
+        let browser = document.getElementById("lb-msg-body");
+        
+        /* We want to display the message body in the browser pane.
+         * There's probably a right way to do this, but for now
+         * here's a very silly hack involving a data URL. Replacing
+         * newlines with <br> for readability is the extent of the
+         * formatting.*/
+        browser.setAttribute("src","data:text/html;charset=UTF-8,<html><head></head><body>" + getMessageBody(msgUri).replace(/\n/g, "<br>") + "</body></html>");
+      },
 
       sortBy: function(sortOrder) {
         /* Sort function returning positive means put

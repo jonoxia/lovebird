@@ -46,18 +46,28 @@
           <listcol flex="1"/>
         </listcols>
       </listbox>
+
+      <vbox flex="2">
       
-      <listbox flex="2" id="lb-msg-list" width="400"
-               ondblclick="Lovebird_NS.msgListDblClick(event);">
-        <listhead>
-          <listheader label="Subject"/>
-          <listheader label="Date"/>
-        </listhead>
-        <listcols>
-          <listcol flex="1"/>
-          <listcol flex="1"/>
-        </listcols>
-      </listbox>
+        <listbox flex="1" id="lb-msg-list" width="400"
+                 ondblclick="Lovebird_NS.msgListDblClick(event);"
+                 onclick="Lovebird_NS.msgListClick(event);">
+          <listhead>
+            <listheader label="Subject"/>
+            <listheader label="Date"/>
+          </listhead>
+          <listcols>
+            <listcol flex="1"/>
+            <listcol flex="1"/>
+          </listcols>
+        </listbox>
+
+        <!-- following after browser id="messagepane" in 
+        http://mxr.mozilla.org/comm-central/source/mail/base/content/messenger.xul -->
+        <browser type="content" id="lb-msg-body" flex="1"
+                 src="about:blank"/>
+
+      </vbox>
     </hbox>
   </vbox>
 </window>
