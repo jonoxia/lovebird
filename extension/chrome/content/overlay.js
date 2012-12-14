@@ -13,10 +13,6 @@ var Lovebird_NS = function() {
   // dictionary keyed on the email address of the person; will contain
   // identity object and message history for that person.
 
-  function last(array) {
-    return array[ array.length - 1];
-  }
-
   function clearList(listElem) {
     // Remove all <listitem>s (but not other children) from the
     // list. careful: children is live, removing nodes changes indices.
