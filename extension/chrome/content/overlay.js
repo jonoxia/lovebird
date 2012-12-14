@@ -117,17 +117,10 @@ var Lovebird_NS = function() {
       row.setAttribute("class", "unanswered");
     }
     row.appendChild(cell);
-    
-    /*cell = document.createElement('listcell');
-    cell.setAttribute('label', rowData.subject);
-    row.appendChild(cell);
-    
-    cell = document.createElement('listcell');
-    cell.setAttribute('label', rowData.date);
-    row.appendChild(cell);*/
-    
+    /* stash the email address in an attribute of the row
+     * so when user clicks on it we can retrieve it from the
+     * click event's target. */
     row.setAttribute("lb_person_email", personId.value);
-    //row.setAttribute("jono_data", rowData.uri);
  
     let personList = document.getElementById("lb-ppl-list");
     personList.appendChild(row);
@@ -173,7 +166,7 @@ var Lovebird_NS = function() {
 
     // Public interface:
     return {
-	openWindow: function() {
+	openTab: function() {
           openLovebirdTab();
 	},
 	

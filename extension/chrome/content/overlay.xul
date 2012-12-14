@@ -9,15 +9,15 @@ xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
                   label="Lovebird"
                   tooltiptext="Open Lovebird Tab"
                   insertbefore="button-address"
-                  oncommand="Lovebird_NS.openWindow();"/>
+                  oncommand="Lovebird_NS.openTab();"/>
    <!-- insertbefore seems to be ignored - it always appears at the
    end. Is this because the other buttons are in mailWindowOverlay.xul?
    -->
  </toolbar>
 
  <menupopup id="taskPopup">
-   <menuitem id="lovebird_OpenWindow"
-	     oncommand="Lovebird_NS.openWindow();"
+   <menuitem id="lovebird_OpenTab"
+	     oncommand="Lovebird_NS.openTab();"
 	     label="Lovebird"/>
  </menupopup>
 
