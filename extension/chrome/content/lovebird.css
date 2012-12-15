@@ -9,3 +9,7 @@ listitem.unanswered {
 listitem.unimportant {
     background-color: #ffffb0;
 }
+
+#lb-add-person {
+  list-style-image: url("chrome://messenger/skin/icons/search-favorite.png");
+}

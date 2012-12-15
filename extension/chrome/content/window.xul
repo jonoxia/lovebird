@@ -34,6 +34,19 @@
                   label="Alphabetical"
                   tooltiptext="Alphabetical by name"
                   oncommand="Lovebird_NS.sortBy('alphabetical');"/>
+
+         <toolbaritem>
+           <label value="Add an email:"/>
+           <textbox id="lb-email-entry"
+                    type="autocomplete"
+                    autocompletesearch="mydomain addrbook"/>
+
+           <toolbarbutton id="lb-add-person"
+                          class="toolbarbutton-1"
+                          label="Add"
+                          tooltiptext=""
+                          oncommand="Lovebird_NS.toolbarAddButton();"/>
+         </toolbaritem>
     </toolbar>
 
     <hbox flex="1">

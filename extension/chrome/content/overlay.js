@@ -5,6 +5,7 @@ var Lovebird_NS = function() {
   const Ci = Components.interfaces;
   const Cc = Components.classes;
   Cu.import("resource://lovebird/modules/name_store.js");
+  Cu.import("resource:///modules/gloda/public.js");
   Cu.import("resource:///modules/mailServices.js"); // needed for MailServices.compose etc.
   Cu.import("resource://gre/modules/Services.jsm"); // needed for Services.io etc.
 
@@ -189,6 +190,55 @@ var Lovebird_NS = function() {
     }
   };
 
+  function loadDataForPerson(identity) {
+    let email = identity.value;
+    if (!myPeople[email]) {
+      myPeople[email] = {
+        identity: identity
+      };
+    }
+    
+    // Query for all messages to/from this person
+    let query = Gloda.newQuery(Gloda.NOUN_MESSAGE);
+    
+    query.involves(identity);
+    let listener = new MyQueryListener(identity);
+    // The query listener object will handle filling in the list
+    // rows as data is recieved.
+    let clcn = query.getCollection(listener);
+  }
+
+  function luvPerson(identity) {
+    let email = identity.value;
+    // don't do anything if this one is already in myPeople:
+    if (!myPeople[email]) {
+      LovebirdNameStore.rememberPeep(email);
+      loadDataForPerson(identity);
+    } else {
+      dump("It's a duplicate.\n");
+    }
+  }
+
+  function luvPersonByEmail(email) {
+    // Query Gloda to get the identity object for this email
+    // address!
+    var id_q = Gloda.newQuery(Gloda.NOUN_IDENTITY);
+    id_q.kind("email");
+    id_q.value(email);
+    var id_coll = id_q.getCollection({
+      onItemsAdded: function(aItems, aCollection) {},
+      onItemsModified: function (aItems,aCollection) {},
+      onItemsRemoved: function(aItems, aCollection) {},
+      onQueryCompleted: function _onCompleted(id_coll) {
+        if (id_coll.items.length > 0) {
+          luvPerson(id_coll.items[0]);
+        } else {
+          window.alert("No identity data found for " + email);
+        }
+      }
+    });	
+  }
+
     // Public interface:
     return {
 	openTab: function() {
@@ -196,63 +246,36 @@ var Lovebird_NS = function() {
 	},
 	
 	onLoad: function() {
-	    Cu.import("resource:///modules/gloda/public.js");
-	    
-	    /*See:  https://developer.mozilla.org/en-US/docs/Thunderbird/Creating_a_Gloda_message_query and
-	     https://developer.mozilla.org/en-US/docs/Thunderbird/Gloda_examples
-	    */
-
-	    // Read list of lovely peeps from sqlite:
-            LovebirdNameStore.dedupe();
-	    LovebirdNameStore.getPeeps(function(peeps) {
-		// Query for an identity for each:
-		var id_q = Gloda.newQuery(Gloda.NOUN_IDENTITY);
-		id_q.kind("email");
-
-		/* use "apply" to make each name in myPeeps array an
-		 * argument to id_q.value(). That will result in the
-		 * query doing an OR across all of them. */
-		dump("My peeps are " + peeps + "\n");
-		id_q.value.apply(id_q, peeps);
-              let id_coll=id_q.getCollection({
-		    onItemsAdded: function _onAdded(aItems,
-						    aCollection) {
-		    },
-		    onItemsModified: function _onModified(aItems,
-							  aCollection) {
-		    },
-		    onItemsRemoved: function _onRemoved(aItems,
-							aCollection) {
-		    },
-		    onQueryCompleted: function _onCompleted(id_coll) {
-		      dump("There are " + id_coll.items.length +
-			   " people\n");
-		      // For each person we get back, do a query
-		      // for that person's latest message:
-                      for (var i = 0; i < id_coll.items.length; i++) {
-                        
-                        // Create entry in myPeople for this person
-                        let email = id_coll.items[i].value;
-                        if (!myPeople[email]) {
-                          myPeople[email] = {
-                            identity: id_coll.items[i]
-                          };
-                        }
-                        
-                        // Query for all messages to/from this person
-			let query = Gloda.newQuery(Gloda.NOUN_MESSAGE);
-                        let person = id_coll.items[i];
-                        dump("Querying for " + person + "\n");
-                        
-			query.involves(person);
-                        let listener = new MyQueryListener(person);
-			let clcn = query.getCollection(listener);
-		      }
-		    } // end onQueryCompleted
-		}); // end getCollection
-	    }); // end getPeeps
+	  /*See:  https://developer.mozilla.org/en-US/docs/Thunderbird/Creating_a_Gloda_message_query and
+	    https://developer.mozilla.org/en-US/docs/Thunderbird/Gloda_examples
+	  */
+	  // Read list of lovely peeps from sqlite:
+          LovebirdNameStore.dedupe();
+	  LovebirdNameStore.getPeeps(function(peeps) {
+	    // Query for an identity for each:
+	    var id_q = Gloda.newQuery(Gloda.NOUN_IDENTITY);
+	    id_q.kind("email");
+            
+	    /* use "apply" to make each name in myPeeps array an
+	     * argument to id_q.value(). That will result in the
+	     * query doing an OR across all of them. */
+	    id_q.value.apply(id_q, peeps);
+            let id_coll=id_q.getCollection({
+	      onItemsAdded: function(aItems, aCollection) {},
+	      onItemsModified: function (aItems,aCollection) {},
+	      onItemsRemoved: function(aItems, aCollection) {},
+	      onQueryCompleted: function _onCompleted(id_coll) {
+                // Get identity corresponding to each email
+                // address in our peep store; load data for
+                // each one.
+                for (var i = 0; i < id_coll.items.length; i++) {
+                  loadDataForPerson(id_coll.items[i]);
+		}
+	      } // end onQueryCompleted
+	    }); // end getCollection
+	  }); // end getPeeps
 	}, // end onLoad
-
+      
 	onUnload: function() {
 	},
 
@@ -274,9 +297,7 @@ var Lovebird_NS = function() {
 						      aCollection) {
 		  },
 		  onQueryCompleted: function _onCompleted(id_coll) {
-		      var email = id_coll.items[0].from.value;
-		      dump("Luving " + email + "\n");
-		      LovebirdNameStore.rememberPeep(email);
+                    luvPerson(id_coll.items[0].from);
 		  }
 		});
 	},
@@ -329,6 +350,25 @@ var Lovebird_NS = function() {
          * newlines with <br> for readability is the extent of the
          * formatting.*/
         browser.setAttribute("src","data:text/html;charset=UTF-8,<html><head></head><body>" + getMessageBody(msgUri).replace(/\n/g, "<br>") + "</body></html>");
+      },
+
+      emailFieldKeyUp: function(event) {
+        dump("You typed in the email field.\n");
+      },
+
+      toolbarAddButton: function() {
+        var email = document.getElementById("lb-email-entry").value;
+
+        /* Note: the field might autocomplete to something like:
+         * Atul Varma <atul@mozillafoundation.org>
+         * in which case we want to strip out what's inside <> */
+        let re = /<(.+)>/;
+        if (re.test(email)) {
+          let result = re.exec(email);
+          luvPersonByEmail(result[1]);
+        } else {
+          luvPersonByEmail(email);
+        }
       },
 
       sortBy: function(sortOrder) {
