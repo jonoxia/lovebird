@@ -343,7 +343,45 @@ var LovebirdModule = function() {
     }
   }
 
-  function sortPeopleWithFunction(sortFunction) {
+  function sortPeopleBy(sortOrder) {
+    /* Sort function returning positive means put
+     * the 2nd argument first, returning negative means put
+     * the 1st argument first. */ 
+    var sortFunction = null;
+    switch(sortOrder) {
+    case "oldest":
+      sortFunction = function(a, b) {
+        return a.lastMsg.date - b.lastMsg.date;
+        }
+      break;
+    case "unanswered":
+      // sort ones where the last message is TO me on top,
+      // where last message is FROM me on the bottom.
+      sortFunction = function(a, b) {
+        if (a.lastMsg.from.value == myEmail && 
+            b.lastMsg.from.value != myEmail) {
+          return 1;
+        } else if (a.lastMsg.from.value != myEmail &&
+                   b.lastMsg.from.value == myEmail) {
+          return -1;
+        } else {
+          return a.lastMsg.date - b.lastMsg.date;
+        }
+      }
+      break;
+    case "alphabetical":
+      sortFunction = function(a, b) {
+        if (a.personId.contact.name > b.personId.contact.name) {
+          return 1;
+        } else if (b.personId.contact.name > a.personId.contact.name) {
+          return -1;
+        } else {
+          return 0;
+        }
+      }
+      break;
+    }
+    
     let theList = lbTabDocument.getElementById("lb-ppl-list");
     clearList(theList);
 
@@ -371,7 +409,7 @@ var LovebirdModule = function() {
     luvPersonByEmail: luvPersonByEmail,
     luvSenderOfMessage: luvSenderOfMessage,
     showEmailForPerson: showEmailForPerson,
-    sortPeopleWithFunction: sortPeopleWithFunction,
+    sortPeopleBy: sortPeopleBy,
     getMessageBody: getMessageBody,
     openReplyWindow: openReplyWindow,
     startNewMailListener: startNewMailListener
