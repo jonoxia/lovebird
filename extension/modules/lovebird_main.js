@@ -246,6 +246,42 @@ var LovebirdModule = function() {
     });	
   }
 
+  function luvSenderOfMessage(selectedMsg) {
+    // selectedMsg must be a a nsIMsgDBHdr
+    Gloda.getMessageCollectionForHeader(selectedMsg,
+     {
+       onItemsAdded: function(aItems, aCollection) {},
+       onItemsModified: function(aItems, aCollection) {},
+       onItemsRemoved: function(aItems, aCollection) {},
+       onQueryCompleted: function _onCompleted(id_coll) {
+         luvPerson(id_coll.items[0].from);
+       }
+     });
+  }
+
+  function startNewMailListener() {
+    // from https://developer.mozilla.org/en-US/docs/Extensions/Thunderbird/HowTos/Common_Thunderbird_Use_Cases/Open_Folder#Watch_for_New_Mail
+
+    var newMailListener = {
+      msgAdded: function(aMsgHdr) {
+        // Here's all the stuff we can read straight off a nsIMsgDBHdr
+        // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIMsgDBHdr
+
+        // Good news - This detects sent mail as well as received!
+        dump("New message detected from " + aMsgHdr.author);
+        dump(" to " + aMsgHdr.recipients);
+        dump(" subject: " + aMsgHdr.subject + "\n");
+        // This works!! I get:
+        // New message detected from Jono Xia <jono@fastmail.fm> to Jeremy O'Brien <jeremypobrien@gmail.com>, Sushu Xia <sushux@gmail.com> subject: Job update
+      }
+    }
+    var notfnSvc =
+      Cc["@mozilla.org/messenger/msgnotificationservice;1"]
+      .getService(Ci.nsIMsgFolderNotificationService);
+
+    notfnSvc.addListener(newMailListener, notfnSvc.msgAdded);
+  }
+
   function loadEverybody(document) {
     lbTabDocument = document;
     /*See:  https://developer.mozilla.org/en-US/docs/Thunderbird/Creating_a_Gloda_message_query and
@@ -333,9 +369,11 @@ var LovebirdModule = function() {
     loadEverybody: loadEverybody,
     luvPerson: luvPerson,
     luvPersonByEmail: luvPersonByEmail,
+    luvSenderOfMessage: luvSenderOfMessage,
     showEmailForPerson: showEmailForPerson,
     sortPeopleWithFunction: sortPeopleWithFunction,
     getMessageBody: getMessageBody,
-    openReplyWindow: openReplyWindow
+    openReplyWindow: openReplyWindow,
+    startNewMailListener: startNewMailListener
   };
 }();
