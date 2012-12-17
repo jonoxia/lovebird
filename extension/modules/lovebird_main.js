@@ -17,6 +17,8 @@ var LovebirdModule = function() {
 
   let lbTabDocument = null;
 
+  let lastSelectedPerson = null;
+
   function clearList(listElem) {
     // Remove all <listitem>s (but not other children) from the
     // list. careful: children is live, removing nodes changes indices.
@@ -32,6 +34,34 @@ var LovebirdModule = function() {
         index++;
       }
     }
+  }
+
+  function niceDateFormat(date) {
+    var now = new Date();
+    var months = ["", "January", "February", "March", "April", "May",
+                  "June", "July", "August", "September", "October",
+                  "November", "December"];
+    var days = ["Sunday", "Monday", "Tuesday", "Wednesday",
+                "Thursday", "Friday", "Saturday"];
+    if (date.getFullYear() < now.getFullYear()) {
+      return months[date.getMonth()] + ", " + date.getFullYear();
+    }
+    if (date.getMonth() < now.getMonth()) {
+      return months[date.getMonth()] + " " + date.getDate();
+    }
+    if (date.getDate() < now.getDate()) {
+      var dayOfMonth = date.getDate();
+      var suffix;
+      if (dayOfMonth == 1) dayOfMonth = "First";
+      else if (dayOfMonth ==2) dayOfMonth = "Second";
+      else if (dayOfMonth == 3) dayOfMonth = "Third";
+      else if (dayOfMonth == 21 || dayOfMonth == 31) dayOfMonth = dayOfMonth + "st";
+      else if (dayOfMonth == 22) dayOfMonth = dayOfMonth + "nd";
+      else if (dayOfMonth == 23) dayOfMonth = dayOfMonth + "rd";
+      else dayOfMonth = dayOfMonth + "th";
+      return days[date.getDay()] + " the " + dayOfMonth;
+    }
+    return date.getHours() + ": " + date.getMinutes();
   }
 
   function openReplyWindow(msgUri) {
@@ -140,13 +170,10 @@ var LovebirdModule = function() {
     let row = lbTabDocument.createElement('listitem');
     let cell = lbTabDocument.createElement('listcell');
 
+    cell.setAttribute("label", personId.contact.name);
     if (rowData.from == myEmail) {
-      cell.setAttribute('label',
-                        "Me to " + personId.contact.name);
       row.setAttribute("class", "sent");
     } else {
-      cell.setAttribute('label',
-                        personId.contact.name + " to me");
       row.setAttribute("class", "unanswered");
     }
     row.appendChild(cell);
@@ -182,15 +209,20 @@ var LovebirdModule = function() {
     onQueryCompleted: function ql_onQueryCompleted(collection) {
       // TODO how do I explicitly sort this collection by date?
       // maybe not needed - that seems to be the default sort.
-      
+  
+      dump("MyQueryListener got queryCompleted.\n");
       // store the whole collection in myPeople:
       var email = this.personId.value;
+      if (myPeople[email].history) {
+        dump("Old history: " + myPeople[email].history.length + " items.\n");
+      }
       // put it in reverse-chronological, newest first:
       myPeople[email].history = [];
       for (var i =0; i < collection.items.length; i++) {
         myPeople[email].history.unshift(collection.items[i]);
       }
 
+      dump("New history: " + myPeople[email].history.length + " items.\n");
       // add this new record to lovebird XUL list
       addRowToPplList(this.personId, 
                       myPeople[email].history[0]);
@@ -212,7 +244,9 @@ var LovebirdModule = function() {
     let listener = new MyQueryListener(identity);
     // The query listener object will handle filling in the list
     // rows as data is recieved.
+    dump("loadDataForPerson ( " + email + " ) is happening.\n");
     let clcn = query.getCollection(listener);
+    dump("Sent it off to the listener.\n");
   }
 
   function luvPerson(identity) {
@@ -261,32 +295,73 @@ var LovebirdModule = function() {
 
   function updateUIForPerson(emailAddr) {
     dump("Will update UI for " + emailAddr + "\n");
-    // TODO!
-    // if addr is not in myPeople, do nothing
-    // if document is null (because tab not open), do nothing
-    // if addr is me, do nothing.
+    if (!lbTabDocument) {
+      dump("no tab document. returning.\n");
+      return;
+    }
+    let person = myPeople[emailAddr];
+    if (!person) {
+      dump("I don't know this person. Returning.\n");
+      return;
+    }
 
     // but otherwise, update the history for this person
     // find their item in the people list and potentially change its
     // color and text
     // re-sort the people list (according to current sort order)
-    // If person is the last one clicked on (so their msg history is
-    // displayed) then recreate that too since it probably has a new
-    // msg on top.
+    
+    // basically we just want to call loadDataForPerson.
+    // function loadDataForPerson(identity) {
+    // but that takes an identity not an email
+    // but that will do addRowToPplList so we need to take the row
+    // out of the ppl list first
 
-    // note this requires remembering last sort order and last
-    // person clicked on!
+    // remove person's row from people list:
+    dump("Trying to remove old person list entry.\n");
+    let personList = lbTabDocument.getElementById("lb-ppl-list");
+    let children = personList.childNodes;
+    for (var i = 0; i < children.length; i++) {
+      let row = children[i];
+      if (row.getAttribute("lb_person_email") == emailAddr) {
+        dump("Found it. Removing.\n");
+        personList.removeChild(row);
+        break;
+      }
+    }
+    
+    dump("Trying to load data for " + person.identity + "\n");
+    loadDataForPerson(person.identity);
+    // TODO this seems to be actually working, but the new query 
+    // done by the MyQueryListener doesn't seem to find the new
+    // message -- it reports same number of emails before and after.
+    // maybe have to try turning this DbMsgHdr into whatever the things
+    // in a collection are and adding it directly.
+    // Find out what kind of object a collection is and examine its
+    // interface!
+    dump("OK loaded it.\n");
+
+    // TODO re-sort people list according to last sort method
+    // because this is definitely going at the bottom.
+
+    if (emailAddr === lastSelectedPerson) {
+      // If person is the last one clicked on (so their msg history is
+      // displayed) then recreate that too since it probably has a new
+      // msg on top.
+      showEmailForPerson(emailAddr);
+
+      // note this requires remembering last sort order and last
+      // person clicked on!
+    }
   }
 
   function cleanEmailAddr(string) {
     // code in overlay.js toolbarAddButton duplicates this
     // TODO drop leading or trailing spaces
     let re = /<(.+)>/;
-    let emailAddr = string;
     if (re.test(string)) {
-      emailAddr = re.exec(string);
+      return re.exec(string)[1];
     }
-    return emailAddr;
+    return string;
   }
 
   function startNewMailListener() {
@@ -310,13 +385,16 @@ var LovebirdModule = function() {
         peopleInvolved.push( cleanEmailAddr( aMsgHdr.author ));
         let recipients = aMsgHdr.recipients.split(",");
         for (var i = 0; i < recipients.length; i++) {
-          peopleInvolved.push( cleanEmailAddr( recipients[i] ));
+          let anotherAddr = cleanEmailAddr( recipients[i] );
+          dump("Adding: " + anotherAddr + "\n");
+          peopleInvolved.push( anotherAddr);
         }
+        dump("People involved in this email: " + peopleInvolved + "\n");
 
         // Update the UI for any of those people that I luv
         for (i = 0; i < peopleInvolved.length; i++) {
           if (myPeople[peopleInvolved[i]] != undefined) {
-            updateUIForPerson(peopleInvolved[i]);
+            updateUIForPerson(peopleInvolved[i], aMsgHdr);
           }
         }
       }
@@ -360,6 +438,7 @@ var LovebirdModule = function() {
   }
 
   function showEmailForPerson(email) {
+    var lastSelectedPerson = email;
     var msgList = lbTabDocument.getElementById("lb-msg-list");
     clearList(msgList);
     
@@ -379,7 +458,7 @@ var LovebirdModule = function() {
       row.appendChild(cell);
       
       cell = lbTabDocument.createElement('listcell');
-      cell.setAttribute('label', msg.date);
+      cell.setAttribute('label', niceDateFormat(msg.date));
       if (!msg.read) {
         cell.setAttribute("class", "unread");
       }

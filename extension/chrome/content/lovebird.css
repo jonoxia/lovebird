@@ -1,13 +1,16 @@
 listitem.sent {
     background-color: #b0ffb0;
+    font-size: 14pt;
 }
 
 listitem.unanswered {
     background-color: #ffb0b0;
+    font-size: 14pt;
 }
 
 listitem.unimportant {
     background-color: #ffffb0;
+    font-size: 14pt;
 }
 
 #lb-add-person {
