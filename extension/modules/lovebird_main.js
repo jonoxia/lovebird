@@ -443,6 +443,22 @@ var LovebirdModule = function() {
     clearList(msgList);
     
     var collection = myPeople[email].history;
+
+    // Sort starred on top:
+    // (TODO group each conversation under one header, put starred convos
+    // on top, chronological within convo)
+    collection.sort(function(a, b){
+    /* Sort function returning positive means put
+     * the 2nd argument first, returning negative means put
+     * the 1st argument first. */ 
+      if (a.starred && !b.starred) {
+        return -1;
+      }
+      if (b.starred && !a.starred) {
+        return 1;
+      }
+      return b.date - a.date;
+    });
     
     for (var i = 0; i < collection.length; i++) {
       var msg = collection[i];
@@ -454,6 +470,15 @@ var LovebirdModule = function() {
       if (!msg.read) {
         cell.setAttribute("class", "unread");
         // TODO unset this class when you read it...
+      }
+      row.appendChild(cell);
+
+      cell = lbTabDocument.createElement('listcell');
+      cell.setAttribute('label', "");
+      if (msg.starred) {
+        var img = lbTabDocument.createElement('image');
+        img.setAttribute("class", "lb-important");
+        cell.appendChild(img);
       }
       row.appendChild(cell);
       

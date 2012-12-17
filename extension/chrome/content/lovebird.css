@@ -20,3 +20,8 @@ listitem.unimportant {
 listcell.unread {
     font-weight: bold;
 }
+
+image.lb-important {
+  /*list-style-image: url("chrome://messenger/skin/icons/flaggedmail.png");*/
+  list-style-image: url("flaggedmail.png");
+}

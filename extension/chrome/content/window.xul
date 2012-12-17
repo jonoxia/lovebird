@@ -67,9 +67,11 @@
                  onclick="Lovebird_NS.msgListClick(event);">
           <listhead>
             <listheader label="Subject"/>
+            <listheader label="Star"/>
             <listheader label="Date"/>
           </listhead>
           <listcols>
+            <listcol flex="1"/>
             <listcol flex="1"/>
             <listcol flex="1"/>
           </listcols>
