@@ -13,3 +13,7 @@ listitem.unimportant {
 #lb-add-person {
   list-style-image: url("chrome://messenger/skin/icons/search-favorite.png");
 }
+
+listcell.unread {
+    font-weight: bold;
+}

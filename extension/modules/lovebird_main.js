@@ -259,6 +259,36 @@ var LovebirdModule = function() {
      });
   }
 
+  function updateUIForPerson(emailAddr) {
+    dump("Will update UI for " + emailAddr + "\n");
+    // TODO!
+    // if addr is not in myPeople, do nothing
+    // if document is null (because tab not open), do nothing
+    // if addr is me, do nothing.
+
+    // but otherwise, update the history for this person
+    // find their item in the people list and potentially change its
+    // color and text
+    // re-sort the people list (according to current sort order)
+    // If person is the last one clicked on (so their msg history is
+    // displayed) then recreate that too since it probably has a new
+    // msg on top.
+
+    // note this requires remembering last sort order and last
+    // person clicked on!
+  }
+
+  function cleanEmailAddr(string) {
+    // code in overlay.js toolbarAddButton duplicates this
+    // TODO drop leading or trailing spaces
+    let re = /<(.+)>/;
+    let emailAddr = string;
+    if (re.test(string)) {
+      emailAddr = re.exec(string);
+    }
+    return emailAddr;
+  }
+
   function startNewMailListener() {
     // from https://developer.mozilla.org/en-US/docs/Extensions/Thunderbird/HowTos/Common_Thunderbird_Use_Cases/Open_Folder#Watch_for_New_Mail
 
@@ -271,8 +301,24 @@ var LovebirdModule = function() {
         dump("New message detected from " + aMsgHdr.author);
         dump(" to " + aMsgHdr.recipients);
         dump(" subject: " + aMsgHdr.subject + "\n");
+        
         // This works!! I get:
         // New message detected from Jono Xia <jono@fastmail.fm> to Jeremy O'Brien <jeremypobrien@gmail.com>, Sushu Xia <sushux@gmail.com> subject: Job update
+
+        // Find all the people involved in the message
+        let peopleInvolved = [];
+        peopleInvolved.push( cleanEmailAddr( aMsgHdr.author ));
+        let recipients = aMsgHdr.recipients.split(",");
+        for (var i = 0; i < recipients.length; i++) {
+          peopleInvolved.push( cleanEmailAddr( recipients[i] ));
+        }
+
+        // Update the UI for any of those people that I luv
+        for (i = 0; i < peopleInvolved.length; i++) {
+          if (myPeople[peopleInvolved[i]] != undefined) {
+            updateUIForPerson(peopleInvolved[i]);
+          }
+        }
       }
     }
     var notfnSvc =
@@ -326,12 +372,19 @@ var LovebirdModule = function() {
       
       cell = lbTabDocument.createElement('listcell');
       cell.setAttribute('label', msg.subject);
+      if (!msg.read) {
+        cell.setAttribute("class", "unread");
+        // TODO unset this class when you read it...
+      }
       row.appendChild(cell);
       
       cell = lbTabDocument.createElement('listcell');
       cell.setAttribute('label', msg.date);
+      if (!msg.read) {
+        cell.setAttribute("class", "unread");
+      }
       row.appendChild(cell);
-      
+
       // Other useful properties of msg:
       // tags, starred, read
       
