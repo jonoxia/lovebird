@@ -16,8 +16,8 @@ var LovebirdModule = function() {
   // identity object and message history for that person.
 
   let lbTabDocument = null;
-
   let lastSelectedPerson = null;
+  let uiDelayTimer = null;
 
   function clearList(listElem) {
     // Remove all <listitem>s (but not other children) from the
@@ -293,8 +293,10 @@ var LovebirdModule = function() {
      });
   }
 
-  function updateUIForPerson(emailAddr) {
-    dump("Will update UI for " + emailAddr + "\n");
+  function updateUIForPerson(emailAddr, newMsgCollection) {
+    dump("Will update UI for " + emailAddr + " with "
+         + newMsgCollection.items.length
+         + " new messages.\n");
     if (!lbTabDocument) {
       dump("no tab document. returning.\n");
       return;
@@ -305,52 +307,41 @@ var LovebirdModule = function() {
       return;
     }
 
-    // but otherwise, update the history for this person
-    // find their item in the people list and potentially change its
-    // color and text
-    // re-sort the people list (according to current sort order)
-    
-    // basically we just want to call loadDataForPerson.
-    // function loadDataForPerson(identity) {
-    // but that takes an identity not an email
-    // but that will do addRowToPplList so we need to take the row
-    // out of the ppl list first
+    // prepend new messages onto this person's history!
+    for (var i =0; i < newMsgCollection.items.length; i++) {
+      dump("Putting message at top of history.\n");
+      person.history.unshift(newMsgCollection.items[i]);
+    }
 
-    // remove person's row from people list:
-    dump("Trying to remove old person list entry.\n");
+    // find this person's row in the people list so it can be updated
+    dump("Trying to update person list entry.\n");
     let personList = lbTabDocument.getElementById("lb-ppl-list");
     let children = personList.childNodes;
     for (var i = 0; i < children.length; i++) {
       let row = children[i];
       if (row.getAttribute("lb_person_email") == emailAddr) {
-        dump("Found it. Removing.\n");
-        personList.removeChild(row);
+        dump("Found it. Updating.\n");
+        // set class based on whether last message was sent or
+        // received - duplicates code form addRowToPplList.
+        if (person.history[0].from.value == myEmail) {
+          row.setAttribute("class", "sent");
+        } else {
+          row.setAttribute("class", "unanswered");
+        }
         break;
       }
     }
-    
-    dump("Trying to load data for " + person.identity + "\n");
-    loadDataForPerson(person.identity);
-    // TODO this seems to be actually working, but the new query 
-    // done by the MyQueryListener doesn't seem to find the new
-    // message -- it reports same number of emails before and after.
-    // maybe have to try turning this DbMsgHdr into whatever the things
-    // in a collection are and adding it directly.
-    // Find out what kind of object a collection is and examine its
-    // interface!
-    dump("OK loaded it.\n");
 
-    // TODO re-sort people list according to last sort method
-    // because this is definitely going at the bottom.
+    // TODO maybe re-sort the people list, if change in status of this
+    // person would affect where in the list they should appear.
 
     if (emailAddr === lastSelectedPerson) {
       // If person is the last one clicked on (so their msg history is
       // displayed) then recreate that too since it probably has a new
       // msg on top.
+      dump("Updated selected person, so relisting email.\n");
+      // TODO this part seems to not be happening, test.
       showEmailForPerson(emailAddr);
-
-      // note this requires remembering last sort order and last
-      // person clicked on!
     }
   }
 
@@ -369,16 +360,9 @@ var LovebirdModule = function() {
 
     var newMailListener = {
       msgAdded: function(aMsgHdr) {
+        // This detects new mail sent as well as received.
         // Here's all the stuff we can read straight off a nsIMsgDBHdr
         // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIMsgDBHdr
-
-        // Good news - This detects sent mail as well as received!
-        dump("New message detected from " + aMsgHdr.author);
-        dump(" to " + aMsgHdr.recipients);
-        dump(" subject: " + aMsgHdr.subject + "\n");
-        
-        // This works!! I get:
-        // New message detected from Jono Xia <jono@fastmail.fm> to Jeremy O'Brien <jeremypobrien@gmail.com>, Sushu Xia <sushux@gmail.com> subject: Job update
 
         // Find all the people involved in the message
         let peopleInvolved = [];
@@ -391,14 +375,35 @@ var LovebirdModule = function() {
         }
         dump("People involved in this email: " + peopleInvolved + "\n");
 
-        // Update the UI for any of those people that I luv
-        for (i = 0; i < peopleInvolved.length; i++) {
-          if (myPeople[peopleInvolved[i]] != undefined) {
-            updateUIForPerson(peopleInvolved[i], aMsgHdr);
+        // Wait a second before querying the database. Otherwise, the
+        // brand-new message won't appear in our query results.
+        dump("Setting timer.\n");
+        uiDelayTimer = Cc["@mozilla.org/timer;1"]
+            .createInstance(Ci.nsITimer);
+        uiDelayTimer.initWithCallback({
+          notify: function() {
+            dump("Timer resolves. Querying Gloda:\n");
+            // query the database for the collection corresponding to
+            // this message header:
+            Gloda.getMessageCollectionForHeader(aMsgHdr, {
+              onItemsAdded: function(aItems, aCollection) {},
+              onItemsModified: function(aItems, aCollection) {},
+              onItemsRemoved: function(aItems, aCollection) {},
+              onQueryCompleted: function _onCompleted(id_coll) {
+                dump("Gloda query completed.\n");
+                // Update the UI for any of those people that I luv
+                for (i = 0; i < peopleInvolved.length; i++) {
+                  if (myPeople[peopleInvolved[i]] != undefined) {
+                    updateUIForPerson(peopleInvolved[i], id_coll);
+                  }
+                }
+              }
+            });
           }
-        }
+        }, 1500, Ci.nsITimer.TYPE_ONE_SHOT);
       }
-    }
+    };
+    // Add our listener:
     var notfnSvc =
       Cc["@mozilla.org/messenger/msgnotificationservice;1"]
       .getService(Ci.nsIMsgFolderNotificationService);
