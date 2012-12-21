@@ -35,6 +35,11 @@ var Lovebird_NS = function() {
       let clickedEmail = event.originalTarget.getAttribute("lb_person_email");
       LovebirdModule.showEmailForPerson(clickedEmail);        
     },
+
+    personListDblClick: function(event) {
+      let clickedEmail = event.originalTarget.getAttribute("lb_person_email");
+      LovebirdModule.openNewMailToAddress(clickedEmail);
+    },
     
     msgListDblClick: function(event) {
       let msgUri = event.originalTarget.getAttribute("lb_msg_uri");

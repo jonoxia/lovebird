@@ -100,6 +100,14 @@ var LovebirdModule = function() {
                                            identity, msgWindow);
   }
 
+  function openNewMailToAddress(address) {
+    var sURL="mailto:" + address;
+    // make the URI
+    let aURI = Services.io.newURI(sURL, null, null);
+    // open new message
+    MailServices.compose.OpenComposeWindowWithURI (null, aURI);
+  }
+
   function openLovebirdTab() {
     let url = "chrome://lovebird/content/window.xul";
 
@@ -574,6 +582,7 @@ var LovebirdModule = function() {
     sortPeopleBy: sortPeopleBy,
     getMessageBody: getMessageBody,
     openReplyWindow: openReplyWindow,
-    startNewMailListener: startNewMailListener
+    startNewMailListener: startNewMailListener,
+    openNewMailToAddress: openNewMailToAddress
   };
 }();

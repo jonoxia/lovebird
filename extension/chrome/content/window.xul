@@ -51,7 +51,8 @@
 
     <hbox flex="1">
       <listbox flex="1" id="lb-ppl-list"
-               onclick="Lovebird_NS.personListClick(event);">
+               onclick="Lovebird_NS.personListClick(event);"
+               ondblclick="Lovebird_NS.personListDblClick(event);">
         <listhead>
           <listheader label="Person"/>
         </listhead>
