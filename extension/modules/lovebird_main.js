@@ -9,8 +9,99 @@ Cu.import("resource:///modules/gloda/public.js");
 Cu.import("resource:///modules/mailServices.js"); // needed for MailServices.compose etc.
 Cu.import("resource://gre/modules/Services.jsm"); // needed for Services.io etc.
 
+const myEmail = "jono@fastmail.fm";
+
+function Convo(convoId) {
+  this.id = convoId;
+  this.lastMsgDate = null;
+  this.needsReplyFlag = false; // TODO read from DB
+  this.hasUnread = false;
+  this.lastSenderIsMe = false;
+  this.pendingDraft = false;
+
+  this.msgColls = [];
+}
+Convo.prototype = {
+  addMsg: function(msgColl) {
+    // assert msgColl.conversationID === this.id ?
+    this.msgColls.push(msgColl);
+    if (msgColl.date > this.lastMsgDate) {
+      // newest message...
+      // set lastSenderIsMe to whether or not I sent this one
+      // if it's a draft, set this.pendingDraft TODO How to know if it's draft?
+      // if it's incoming and unread, set needsReplyFlag to true?
+    }
+
+    if (!msgColl.read) {
+      this.hasUnread = true;
+    }
+  },
+  
+  getThread: function() {
+    // return this.msgColls sorted by date
+  },
+
+  markRead: function(newVal) {
+    this.hasUnread = newVal;
+    // also mark the unread message itself read?
+  },
+  
+  markNeedsReply: function(newVal) {
+    this.needsReplyFlag = newVal;
+    // TODO persist
+  }
+};
+
+function Peep(identity) {
+  this.identity = identity;
+  this.history = [];
+  //this.conversations = {}; // will be keyed by conversationId
+
+      /*from: latestMsg.from.value,
+      to: latestMsg.to[0].value,  	    // "to" is a list.
+      subject: latestMsg.subject,
+      date: latestMsg.date,
+      uri: latestMsg.folderMessageURI,
+      name: personId.contact.name*/
+}
+Peep.prototype = {
+  addMessage: function(msgColl) {
+    this.history.unshift(msgColl);
+  },
+
+  clearHistory: function() {
+    this.history = [];
+  },
+
+  getHistory: function() {
+    return this.history;
+  },
+
+  getName: function() {
+    return this.identity.contact.name;
+  },
+
+  getEmailAddr: function() {
+    return this.identity.value;
+  },
+
+  getStatus: function() {
+    // return values match css class names for rows
+    if (this.history[0].from.value == myEmail) {
+      return "sent";
+    } else {
+      return "unanswered";
+    }
+  },
+
+  getLastMsgDate: function() {
+    return this.history[0].date;
+  }
+};
+
+
+
 var LovebirdModule = function() {
-  let myEmail = "jono@fastmail.fm";
   let myPeople = {};
   // dictionary keyed on the email address of the person; will contain
   // identity object and message history for that person.
@@ -160,35 +251,22 @@ var LovebirdModule = function() {
                                      { });
   }
   
-  function addRowToPplList(personId, latestMsg) {
+  function addRowToPplList(person) {
     if (!lbTabDocument) {
       return;
     }
-
-    var rowData = {
-      from: latestMsg.from.value,
-      to: latestMsg.to[0].value,  	    // "to" is a list.
-      subject: latestMsg.subject,
-      date: latestMsg.date,
-      uri: latestMsg.folderMessageURI,
-      name: personId.contact.name
-    };
     
     //let theList = document.getElementById("lb-main-list");
     let row = lbTabDocument.createElement('listitem');
     let cell = lbTabDocument.createElement('listcell');
 
-    cell.setAttribute("label", personId.contact.name);
-    if (rowData.from == myEmail) {
-      row.setAttribute("class", "sent");
-    } else {
-      row.setAttribute("class", "unanswered");
-    }
+    cell.setAttribute("label", person.getName());
+    row.setAttribute("class", person.getStatus());
     row.appendChild(cell);
     /* stash the email address in an attribute of the row
      * so when user clicks on it we can retrieve it from the
      * click event's target. */
-    row.setAttribute("lb_person_email", personId.value);
+    row.setAttribute("lb_person_email", person.getEmailAddr());
  
     let personList = lbTabDocument.getElementById("lb-ppl-list");
     personList.appendChild(row);
@@ -221,28 +299,23 @@ var LovebirdModule = function() {
       dump("MyQueryListener got queryCompleted.\n");
       // store the whole collection in myPeople:
       var email = this.personId.value;
-      if (myPeople[email].history) {
-        dump("Old history: " + myPeople[email].history.length + " items.\n");
-      }
+      var peep = myPeople[email];
+
       // put it in reverse-chronological, newest first:
-      myPeople[email].history = [];
+      peep.clearHistory();
       for (var i =0; i < collection.items.length; i++) {
-        myPeople[email].history.unshift(collection.items[i]);
+        peep.addMessage(collection.items[i]);
       }
 
-      dump("New history: " + myPeople[email].history.length + " items.\n");
       // add this new record to lovebird XUL list
-      addRowToPplList(this.personId, 
-                      myPeople[email].history[0]);
+      addRowToPplList(peep);
     }
   };
 
   function loadDataForPerson(identity) {
     let email = identity.value;
     if (!myPeople[email]) {
-      myPeople[email] = {
-        identity: identity
-      };
+      myPeople[email] = new Peep(identity);
     }
     
     // Query for all messages to/from this person
@@ -254,7 +327,6 @@ var LovebirdModule = function() {
     // rows as data is recieved.
     dump("loadDataForPerson ( " + email + " ) is happening.\n");
     let clcn = query.getCollection(listener);
-    dump("Sent it off to the listener.\n");
   }
 
   function luvPerson(identity) {
@@ -317,8 +389,7 @@ var LovebirdModule = function() {
 
     // prepend new messages onto this person's history!
     for (var i =0; i < newMsgCollection.items.length; i++) {
-      dump("Putting message at top of history.\n");
-      person.history.unshift(newMsgCollection.items[i]);
+      person.addMessage(newMsgCollection.items[i]);
     }
 
     // find this person's row in the people list so it can be updated
@@ -329,13 +400,7 @@ var LovebirdModule = function() {
       let row = children[i];
       if (row.getAttribute("lb_person_email") == emailAddr) {
         dump("Found it. Updating.\n");
-        // set class based on whether last message was sent or
-        // received - duplicates code form addRowToPplList.
-        if (person.history[0].from.value == myEmail) {
-          row.setAttribute("class", "sent");
-        } else {
-          row.setAttribute("class", "unanswered");
-        }
+        row.setAttribute("class", person.getStatus());
         break;
       }
     }
@@ -455,7 +520,8 @@ var LovebirdModule = function() {
     var msgList = lbTabDocument.getElementById("lb-msg-list");
     clearList(msgList);
     
-    var collection = myPeople[email].history;
+    var person = myPeople[email];
+    var collection = person.getHistory();
 
     // Sort starred on top:
     // (TODO group each conversation under one header, put starred convos
@@ -474,6 +540,7 @@ var LovebirdModule = function() {
     });
     
     for (var i = 0; i < collection.length; i++) {
+      dump("conversationID: " + collection[i].conversationID + "\n");
       var msg = collection[i];
       let row = lbTabDocument.createElement('listitem');
       let cell = lbTabDocument.createElement('listcell');
@@ -521,29 +588,29 @@ var LovebirdModule = function() {
     switch(sortOrder) {
     case "oldest":
       sortFunction = function(a, b) {
-        return a.lastMsg.date - b.lastMsg.date;
-        }
+        return a.getLastMsgDate() - b.getLastMsgDate();
+      }
       break;
     case "unanswered":
       // sort ones where the last message is TO me on top,
       // where last message is FROM me on the bottom.
       sortFunction = function(a, b) {
-        if (a.lastMsg.from.value == myEmail && 
-            b.lastMsg.from.value != myEmail) {
+        if (a.getStatus() == "sent" && 
+            b.getStatus() == "unanswered") {
           return 1;
-        } else if (a.lastMsg.from.value != myEmail &&
-                   b.lastMsg.from.value == myEmail) {
+        } else if (a.getStatus() == "unanswered" &&
+                   b.getStatus() == "sent") {
           return -1;
         } else {
-          return a.lastMsg.date - b.lastMsg.date;
+          return a.getLastMsgDate() - b.getLastMsgDate();
         }
       }
       break;
     case "alphabetical":
       sortFunction = function(a, b) {
-        if (a.personId.contact.name > b.personId.contact.name) {
+        if (a.getName() > b.getName()) {
           return 1;
-        } else if (b.personId.contact.name > a.personId.contact.name) {
+        } else if (b.getName() > a.getName()) {
           return -1;
         } else {
           return 0;
@@ -558,8 +625,7 @@ var LovebirdModule = function() {
     // make array to sort out of myPeople (person, lastMsg) tuples
     var arrayToSort = [];
     for (var email in myPeople) {
-      arrayToSort.push({personId: myPeople[email].identity,
-                        lastMsg: myPeople[email].history[0]});
+      arrayToSort.push(myPeople[email]);
     }
 
     // sort it according to sort function
@@ -567,8 +633,7 @@ var LovebirdModule = function() {
     
     // refill list with newly ordered records
     for (var i = 0; i < arrayToSort.length; i++) {
-      addRowToPplList(arrayToSort[i].personId,
-                      arrayToSort[i].lastMsg);
+      addRowToPplList(arrayToSort[i]);
     }
   }
 
