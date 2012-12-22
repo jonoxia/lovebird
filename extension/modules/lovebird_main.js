@@ -11,70 +11,151 @@ Cu.import("resource://gre/modules/Services.jsm"); // needed for Services.io etc.
 
 const myEmail = "jono@fastmail.fm";
 
+
+
+
+  function getMessageBody(msgUri) {
+
+    let msgURI = Services.io.newURI(msgUri, null, null);
+    let messenger = Cc["@mozilla.org/messenger;1"].createInstance(Ci.nsIMessenger);
+    // Get the message database header for the given message uri:
+    let aMessageHeader = messenger.msgHdrFromURI(msgUri);
+
+    let listener = Cc["@mozilla.org/network/sync-stream-listener;1"]
+      .createInstance(Ci.nsISyncStreamListener);
+
+    // does this give us back the original msgUri and if so can we
+    // skip this step?
+    let uri = aMessageHeader.folder.getUriForMsg(aMessageHeader);
+    messenger.messageServiceFromURI(uri)
+      .streamMessage(uri, listener, null, null, false, "");
+    let folder = aMessageHeader.folder;
+    return folder.getMsgTextFromStream(listener.inputStream,
+                                       aMessageHeader.Charset,
+                                     65536,
+                                     32768,
+                                     false,
+                                     true,
+                                     { });
+  }
+
+
 function Convo(convoId) {
   this.id = convoId;
-  this.lastMsgDate = null;
-  this.needsReplyFlag = false; // TODO read from DB
-  this.hasUnread = false;
+  /*this.lastMsgDate = null;
   this.lastSenderIsMe = false;
-  this.pendingDraft = false;
+  this.pendingDraft = false;*/
+  this._hasUnread = false;
+  this._needsReplyFlag = false;    // TODO read from DB
 
   this.msgColls = [];
 }
 Convo.prototype = {
   addMsg: function(msgColl) {
     // assert msgColl.conversationID === this.id ?
-    this.msgColls.push(msgColl);
-    if (msgColl.date > this.lastMsgDate) {
+    this.msgColls.unshift(msgColl);
+
+    // TODO sort these somewhere
+
+    /*if (msgColl.date > this.lastMsgDate) {
       // newest message...
       // set lastSenderIsMe to whether or not I sent this one
       // if it's a draft, set this.pendingDraft TODO How to know if it's draft?
       // if it's incoming and unread, set needsReplyFlag to true?
-    }
+    }*/
 
     if (!msgColl.read) {
-      this.hasUnread = true;
+      this._hasUnread = true;
     }
   },
   
-  getThread: function() {
-    // return this.msgColls sorted by date
+  getThreadTextAsHtml: function() {
+    var html = "<html><head></head><body>";
+    for (var i = 0; i < this.msgColls.length; i++) {
+      var uri = this.msgColls[i].folderMessageURI;
+      html += getMessageBody(uri).replace(/\n/g, "<br>");
+      html += "<hr>";
+    }
+    html+= "</body></html>";
+    return html;
   },
 
   markRead: function(newVal) {
-    this.hasUnread = newVal;
+    this._hasUnread = newVal;
     // also mark the unread message itself read?
   },
   
   markNeedsReply: function(newVal) {
-    this.needsReplyFlag = newVal;
+    this._needsReplyFlag = newVal;
     // TODO persist
+  },
+
+  getStatus: function() {
+    // return values match css class names for rows
+    if (this.msgColls[0].from.value == myEmail) {
+      return "sent";
+    } else {
+      return "unanswered";
+    }
+  },
+
+  getLastMsgDate: function() {
+    return this.msgColls[0].date;
+  },
+  
+  getSubject: function() {
+    return this.msgColls[0].subject;
+  },
+
+  getLastMsgUri: function() {
+    return this.msgColls[0].folderMessageURI;
+  },
+
+  hasUnread: function() {
+    return this._hasUnread;
   }
 };
 
 function Peep(identity) {
   this.identity = identity;
-  this.history = [];
-  //this.conversations = {}; // will be keyed by conversationId
+  this.conversations = {}; // keyed by conversationId
 
-      /*from: latestMsg.from.value,
-      to: latestMsg.to[0].value,  	    // "to" is a list.
-      subject: latestMsg.subject,
-      date: latestMsg.date,
-      uri: latestMsg.folderMessageURI,
-      name: personId.contact.name*/
+  // useful msg properties: from.value, to[0].value,
+  // .subject, .date, .folderMessageURI
+  this._convosAreSorted = false;
+  this._sortedConvos = [];
 }
 Peep.prototype = {
   addMessage: function(msgColl) {
-    this.history.unshift(msgColl);
+    // Use the conversation ID to figure out which conversation
+    // this message belongs in:
+    var convId = msgColl.conversationID;
+    if (!this.conversations[convId]) {
+      this.conversations[convId] = new Convo(convId);
+    }
+    this.conversations[convId].addMsg(msgColl);
+    this._convosAreSorted = false;
   },
 
   clearHistory: function() {
-    this.history = [];
+    this.conversations = {};
   },
 
-  getHistory: function() {
-    return this.history;
+  getConversations: function() {
+    // return conversation list sorted by date. but be lazy about it.
+    if (!this._convosAreSorted) {
+      this._sortedConvos = [];
+      for (var convId in this.conversations) {
+        this._sortedConvos.push(this.conversations[convId]);
+      }
+      // This is just sorting with newest convos on top...
+      // TODO maybe consider stars or reply status when sorting?
+      this._sortedConvos.sort(function(a, b) {
+        return b.getLastMsgDate() - a.getLastMsgDate();
+      });
+      this._convosAreSorted = true;
+    }
+    return this._sortedConvos;
   },
 
   getName: function() {
@@ -86,19 +167,17 @@ Peep.prototype = {
   },
 
   getStatus: function() {
-    // return values match css class names for rows
-    if (this.history[0].from.value == myEmail) {
-      return "sent";
-    } else {
-      return "unanswered";
-    }
+    return this.getConversations()[0].getStatus();
   },
 
   getLastMsgDate: function() {
-    return this.history[0].date;
+    return this.getConversations()[0].getLastMsgDate();
+  },
+
+  getConvoById: function(convoId) {
+    return this.conversations[convoId];
   }
 };
-
 
 
 var LovebirdModule = function() {
@@ -152,7 +231,12 @@ var LovebirdModule = function() {
       else dayOfMonth = dayOfMonth + "th";
       return days[date.getDay()] + " the " + dayOfMonth;
     }
-    return date.getHours() + ": " + date.getMinutes();
+    var hours = date.getHours();
+    var minutes = date.getMinutes();
+    if (minutes < 10) {
+      return hours + ":0" + minutes;
+    }
+    return hours + ":" + minutes;
   }
 
   function openReplyWindow(msgUri) {
@@ -226,30 +310,6 @@ var LovebirdModule = function() {
     // TODO Improve this page: https://developer.mozilla.org/en-US/docs/Extensions/Thunderbird/HowTos/Common_Thunderbird_Extension_Techniques/Add_New_Tab
   }
 
-  function getMessageBody(msgUri) {
-
-    let msgURI = Services.io.newURI(msgUri, null, null);
-    let messenger = Cc["@mozilla.org/messenger;1"].createInstance(Ci.nsIMessenger);
-    // Get the message database header for the given message uri:
-    let aMessageHeader = messenger.msgHdrFromURI(msgUri);
-
-    let listener = Cc["@mozilla.org/network/sync-stream-listener;1"]
-      .createInstance(Ci.nsISyncStreamListener);
-
-    // does this give us back the original msgUri and if so can we
-    // skip this step?
-    let uri = aMessageHeader.folder.getUriForMsg(aMessageHeader);
-    messenger.messageServiceFromURI(uri)
-      .streamMessage(uri, listener, null, null, false, "");
-    let folder = aMessageHeader.folder;
-    return folder.getMsgTextFromStream(listener.inputStream,
-                                       aMessageHeader.Charset,
-                                     65536,
-                                     32768,
-                                     false,
-                                     true,
-                                     { });
-  }
   
   function addRowToPplList(person) {
     if (!lbTabDocument) {
@@ -296,12 +356,12 @@ var LovebirdModule = function() {
       // TODO how do I explicitly sort this collection by date?
       // maybe not needed - that seems to be the default sort.
   
-      dump("MyQueryListener got queryCompleted.\n");
       // store the whole collection in myPeople:
       var email = this.personId.value;
       var peep = myPeople[email];
 
-      // put it in reverse-chronological, newest first:
+      // Feed all of these messages to the Peep object, which will
+      // handle sorting them.
       peep.clearHistory();
       for (var i =0; i < collection.items.length; i++) {
         peep.addMessage(collection.items[i]);
@@ -521,33 +581,16 @@ var LovebirdModule = function() {
     clearList(msgList);
     
     var person = myPeople[email];
-    var collection = person.getHistory();
+    var conversations = person.getConversations();
 
-    // Sort starred on top:
-    // (TODO group each conversation under one header, put starred convos
-    // on top, chronological within convo)
-    collection.sort(function(a, b){
-    /* Sort function returning positive means put
-     * the 2nd argument first, returning negative means put
-     * the 1st argument first. */ 
-      if (a.starred && !b.starred) {
-        return -1;
-      }
-      if (b.starred && !a.starred) {
-        return 1;
-      }
-      return b.date - a.date;
-    });
-    
-    for (var i = 0; i < collection.length; i++) {
-      dump("conversationID: " + collection[i].conversationID + "\n");
-      var msg = collection[i];
+    for (var i = 0; i < conversations.length; i++) {
+      var convo = conversations[i];
       let row = lbTabDocument.createElement('listitem');
       let cell = lbTabDocument.createElement('listcell');
       
       cell = lbTabDocument.createElement('listcell');
-      cell.setAttribute('label', msg.subject);
-      if (!msg.read) {
+      cell.setAttribute('label', convo.getSubject());
+      if (convo.hasUnread()) {
         cell.setAttribute("class", "unread");
         // TODO unset this class when you read it...
       }
@@ -555,16 +598,17 @@ var LovebirdModule = function() {
 
       cell = lbTabDocument.createElement('listcell');
       cell.setAttribute('label', "");
-      if (msg.starred) {
+      /*if (msg.starred) {
         var img = lbTabDocument.createElement('image');
         img.setAttribute("class", "lb-important");
         cell.appendChild(img);
-      }
+      }*/
       row.appendChild(cell);
       
       cell = lbTabDocument.createElement('listcell');
-      cell.setAttribute('label', niceDateFormat(msg.date));
-      if (!msg.read) {
+      cell.setAttribute('label',
+                        niceDateFormat(convo.getLastMsgDate()));
+      if (convo.hasUnread()) {
         cell.setAttribute("class", "unread");
       }
       row.appendChild(cell);
@@ -572,9 +616,9 @@ var LovebirdModule = function() {
       // Other useful properties of msg:
       // tags, starred, read
       
-      // store message uri in attribute so double-click handler
-      // can get uri out of click event target
-      row.setAttribute("lb_msg_uri", msg.folderMessageURI);
+      // store conversation ID in attribute of the row
+      // so click and double-click handlers know what to do
+      row.setAttribute("lb_convo_id", convo.id);
       
       msgList.appendChild(row);
     }
@@ -637,6 +681,32 @@ var LovebirdModule = function() {
     }
   }
 
+  function getConvoById(convoId) {
+    for (var email in myPeople) {
+      var convo = myPeople[email].getConvoById(convoId);
+      if (convo) {
+        return convo;
+      }
+    }
+    return null;
+  }
+
+  function getHtmlForThread(convoId) {
+    var convo = getConvoById(convoId);
+    if (convo) {
+      return convo.getThreadTextAsHtml();
+    } else {
+      return "Error - no such conversation.";
+    }
+  }
+
+  function openReplyWindowForThread(convoId) {
+    var convo = getConvoById(convoId);
+    if (convo) {
+      openReplyWindow( convo.getLastMsgUri() );
+    }
+  }
+
   return {
     openLovebirdTab: openLovebirdTab,
     loadEverybody: loadEverybody,
@@ -645,9 +715,9 @@ var LovebirdModule = function() {
     luvSenderOfMessage: luvSenderOfMessage,
     showEmailForPerson: showEmailForPerson,
     sortPeopleBy: sortPeopleBy,
-    getMessageBody: getMessageBody,
-    openReplyWindow: openReplyWindow,
+    openReplyWindowForThread: openReplyWindowForThread,
     startNewMailListener: startNewMailListener,
-    openNewMailToAddress: openNewMailToAddress
+    openNewMailToAddress: openNewMailToAddress,
+    getHtmlForThread: getHtmlForThread
   };
 }();

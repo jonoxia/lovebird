@@ -42,20 +42,21 @@ var Lovebird_NS = function() {
     },
     
     msgListDblClick: function(event) {
-      let msgUri = event.originalTarget.getAttribute("lb_msg_uri");
-      LovebirdModule.openReplyWindow(msgUri);
+      let convoID = event.originalTarget.getAttribute("lb_convo_id");
+      LovebirdModule.openReplyWindowForThread(convoID);
     },
     
     msgListClick: function(event) {
-      let msgUri = event.originalTarget.getAttribute("lb_msg_uri");
-      let browser = document.getElementById("lb-msg-body");
+      let convoID = event.originalTarget.getAttribute("lb_convo_id");
+      let browser = document.getElementById("lb-msg-body"); 
       
       /* We want to display the message body in the browser pane.
        * There's probably a right way to do this, but for now
        * here's a very silly hack involving a data URL. Replacing
        * newlines with <br> for readability is the extent of the
        * formatting.*/
-      browser.setAttribute("src","data:text/html;charset=UTF-8,<html><head></head><body>" + LovebirdModule.getMessageBody(msgUri).replace(/\n/g, "<br>") + "</body></html>");
+      browser.setAttribute("src","data:text/html;charset=UTF-8," +
+                          LovebirdModule.getHtmlForThread(convoID));
     },
 
     emailFieldKeyUp: function(event) {
