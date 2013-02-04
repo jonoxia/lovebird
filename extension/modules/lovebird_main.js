@@ -207,7 +207,7 @@ var LovebirdModule = function() {
 
   function niceDateFormat(date) {
     var now = new Date();
-    var months = ["", "January", "February", "March", "April", "May",
+    var months = ["January", "February", "March", "April", "May",
                   "June", "July", "August", "September", "October",
                   "November", "December"];
     var days = ["Sunday", "Monday", "Tuesday", "Wednesday",
