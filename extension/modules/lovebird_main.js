@@ -44,7 +44,7 @@ function Convo(convoId) {
   this.lastSenderIsMe = false;
   this.pendingDraft = false;*/
   this._hasUnread = false;
-  this._needsReplyFlag = false;    // TODO read from DB
+  this._needsReplyFlag = true;    // TODO read from DB
 
   this.msgColls = [];
 }
@@ -86,6 +86,14 @@ Convo.prototype = {
   markNeedsReply: function(newVal) {
     this._needsReplyFlag = newVal;
     // TODO persist
+  },
+
+  toggleNeedsReply: function() {
+    this._needsReplyFlag = !this._needsReplyFlag;
+  },
+
+  needsReply: function() {
+    return this._needsReplyFlag;
   },
 
   getStatus: function() {
@@ -609,11 +617,11 @@ var LovebirdModule = function() {
         
         // row is integer, but col is an object...
         if (col.id == "starColumn") {
-          var atom = atomService.getAtom("starred");
-          // TODO or "unstarred", depending on stuff not yet implemented
+          /* Set a property to make the cell starred or unstarred -
+           * there are css selectors in lovebird.css that set the
+           * star image based on this property. */
+          var atom = atomService.getAtom(convo.needsReply()?"starred": "unstarred");
           props.AppendElement(atom);
-          // can return a property here for starred (or unstarred)
-          // cells - these become css selectors
         } else {
           if (convo.hasUnread()) {
             var atom = atomService.getAtom("unread");
@@ -697,8 +705,6 @@ var LovebirdModule = function() {
   }
 
   function getConvoIdForRow(index) {
-    dump("Trying to getConvoIdForRow " + index + "\n");
-    dump("Displayed person is " + m_lastSelectedPerson + "\n");
     var person = myPeople[m_lastSelectedPerson];
     var convos = person.getConversations();
     return convos[index].id;
@@ -723,6 +729,12 @@ var LovebirdModule = function() {
     }
   }
 
+  function handleStarClick(rowIndex) {
+    var person = myPeople[m_lastSelectedPerson];
+    var convos = person.getConversations();
+    convos[rowIndex].toggleNeedsReply();
+  }
+
   return {
     openLovebirdTab: openLovebirdTab,
     loadEverybody: loadEverybody,
@@ -735,6 +747,7 @@ var LovebirdModule = function() {
     startNewMailListener: startNewMailListener,
     openNewMailToAddress: openNewMailToAddress,
     getHtmlForThread: getHtmlForThread,
-    getConvoIdForRow: getConvoIdForRow
+    getConvoIdForRow: getConvoIdForRow,
+    handleStarClick: handleStarClick
   };
 }();

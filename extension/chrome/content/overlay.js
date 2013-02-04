@@ -45,7 +45,6 @@ var Lovebird_NS = function() {
       var view = document.getElementById("lb-msg-tree").view;
       var sel = view.selection.currentIndex; //returns -1 if the tree is not focused
       //var treeItem = view.getItemAtIndex(sel); // not function
-      dump("You selected row " + sel + "\n");
       var convoID = LovebirdModule.getConvoIdForRow(sel);
       let browser = document.getElementById("lb-msg-body"); 
 
@@ -66,8 +65,7 @@ var Lovebird_NS = function() {
       var row = { }, col = { }, child = { };
       tbo.getCellAt(event.clientX, event.clientY, row, col, child);
       if (col.value.id == "starColumn") {
-        dump("You clicked the star column of row... " + row.value + "\n");
-        // TODO deal with star click!
+        LovebirdModule.handleStarClick(row.value);
       }
     },
 
@@ -79,8 +77,6 @@ var Lovebird_NS = function() {
       var row = { }, col = { }, child = { };
       tbo.getCellAt(event.clientX, event.clientY, row, col, child);
       
-      //var cellText = tree.view.getCellText(row.value, col.value);
-      //dump("you double-clicked at row = " + row + " col = " + col + "\n");
       var convoID = LovebirdModule.getConvoIdForRow(row.value);
       LovebirdModule.openReplyWindowForThread(convoID);
     },
