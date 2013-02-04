@@ -10,14 +10,7 @@ var Lovebird_NS = function() {
   // Public interface:
   return {
     openTab: function() {
-      dump("Opening window\n");
-	var newWindow = window.open(
-          "chrome://lovebird/content/tree-window.xul",
-          "Lovebird_treeWindow",
-          "chrome,titlebar,centerscreen,dialog=no"
-        );
-      //window.open( "chrome://lovebird/content/tree-window.xul", "treetestwindow");
-      //LovebirdModule.openLovebirdTab();
+      LovebirdModule.openLovebirdTab();
     },
 
     onLoad: function() {
