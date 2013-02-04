@@ -69,7 +69,7 @@
               ondblclick="Lovebird_NS.msgTreeDblClick(event);">
           <treecols>
             <treecol id="subjectColumn" label="Subject" flex="2"/>
-            <treecol id="starColumn" label="Star" flex="0"/>
+            <treecol id="starColumn" label="NR?" flex="0"/>
             <treecol id="dateColumn" label="Date" flex="1"/>
           </treecols>
           

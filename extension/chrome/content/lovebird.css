@@ -20,14 +20,14 @@ listitem.unimportant {
 /* I cheated by copying flaggedmail.png and dot.png from thunderbird's
  * theme to my chrome/content directory... can put custom images here
  * later. */
-treechildren::-moz-tree-image(starred)
+treechildren::-moz-tree-image(needsReply)
 {
-  list-style-image: url("flaggedmail.png");
+  list-style-image: url("message-mail-new.png");
 }
 
-treechildren::-moz-tree-image(unstarred)
+treechildren::-moz-tree-image(doesntNeed)
 {
-  list-style-image: url("dot.png");
+  list-style-image: url("check.png");
 }
 
 treechildren::-moz-tree-cell-text(unread)

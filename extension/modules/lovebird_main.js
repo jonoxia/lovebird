@@ -60,6 +60,7 @@ Convo.prototype = {
       // set lastSenderIsMe to whether or not I sent this one
       // if it's a draft, set this.pendingDraft TODO How to know if it's draft?
       // if it's incoming and unread, set needsReplyFlag to true?
+      // if it's outgoing, set needsReplyFlag to false
     }*/
 
     if (!msgColl.read) {
@@ -93,7 +94,11 @@ Convo.prototype = {
   },
 
   needsReply: function() {
-    return this._needsReplyFlag;
+    if (this.getStatus() == "sent") {
+      return false;
+    } else {
+      return this._needsReplyFlag;
+    }
   },
 
   getStatus: function() {
@@ -620,7 +625,7 @@ var LovebirdModule = function() {
           /* Set a property to make the cell starred or unstarred -
            * there are css selectors in lovebird.css that set the
            * star image based on this property. */
-          var atom = atomService.getAtom(convo.needsReply()?"starred": "unstarred");
+          var atom = atomService.getAtom(convo.needsReply()?"needsReply": "doesntNeed");
           props.AppendElement(atom);
         } else {
           if (convo.hasUnread()) {
