@@ -43,9 +43,7 @@ var Lovebird_NS = function() {
 
     msgTreeSelect: function() {
       var view = document.getElementById("lb-msg-tree").view;
-      var sel = view.selection.currentIndex; //returns -1 if the tree is not focused
-      //var treeItem = view.getItemAtIndex(sel); // not function
-      var convoID = LovebirdModule.getConvoIdForRow(sel);
+      var rowIndex = view.selection.currentIndex; //returns -1 if the tree is not focused
       let browser = document.getElementById("lb-msg-body"); 
 
       /* We want to display the message body in the browser pane.
@@ -54,7 +52,7 @@ var Lovebird_NS = function() {
        * newlines with <br> for readability is the extent of the
        * formatting.*/
       browser.setAttribute("src","data:text/html;charset=UTF-8," +
-                          LovebirdModule.getHtmlForThread(convoID));
+                          LovebirdModule.getHtmlForThread(rowIndex));
     },
 
     msgTreeClick: function(event) {
@@ -77,8 +75,7 @@ var Lovebird_NS = function() {
       var row = { }, col = { }, child = { };
       tbo.getCellAt(event.clientX, event.clientY, row, col, child);
       
-      var convoID = LovebirdModule.getConvoIdForRow(row.value);
-      LovebirdModule.openReplyWindowForThread(convoID);
+      LovebirdModule.openReplyWindowForThread(row.value);
     },
     
     emailFieldKeyUp: function(event) {

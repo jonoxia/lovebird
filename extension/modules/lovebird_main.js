@@ -694,27 +694,21 @@ var LovebirdModule = function() {
     }
   }
 
-  function getConvoById(convoId) {
-    for (var email in myPeople) {
-      var convo = myPeople[email].getConvoById(convoId);
-      if (convo) {
-        return convo;
+  function getConvoForRow(index) {
+    if (m_lastSelectedPerson) {
+      var person = myPeople[m_lastSelectedPerson];
+      if (person) {
+        var convos = person.getConversations();
+        if (index >= 0 && index < convos.length) {
+          return convos[index];
+        }
       }
     }
     return null;
   }
 
-  function getConvoIdForRow(index) {
-    var person = myPeople[m_lastSelectedPerson];
-    var convos = person.getConversations();
-    return convos[index].id;
-    // TODO if this ID is always going to be passed right
-    // back to getConvoById then we could just return
-    // convos[index] and save a step.
-  }
-
-  function getHtmlForThread(convoId) {
-    var convo = getConvoById(convoId);
+  function getHtmlForThread(rowIndex) {
+    var convo = getConvoForRow(rowIndex);
     if (convo) {
       return convo.getThreadTextAsHtml();
     } else {
@@ -722,17 +716,18 @@ var LovebirdModule = function() {
     }
   }
 
-  function openReplyWindowForThread(convoId) {
-    var convo = getConvoById(convoId);
+  function openReplyWindowForThread(rowIndex) {
+    var convo = getConvoForRow(rowIndex);
     if (convo) {
       openReplyWindow( convo.getLastMsgUri() );
     }
   }
 
   function handleStarClick(rowIndex) {
-    var person = myPeople[m_lastSelectedPerson];
-    var convos = person.getConversations();
-    convos[rowIndex].toggleNeedsReply();
+    var convo = getConvoForRow(rowIndex);
+    if (convo) {
+      convo.toggleNeedsReply();
+    }
   }
 
   return {
@@ -747,7 +742,6 @@ var LovebirdModule = function() {
     startNewMailListener: startNewMailListener,
     openNewMailToAddress: openNewMailToAddress,
     getHtmlForThread: getHtmlForThread,
-    getConvoIdForRow: getConvoIdForRow,
     handleStarClick: handleStarClick
   };
 }();
