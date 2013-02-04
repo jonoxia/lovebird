@@ -17,11 +17,20 @@ listitem.unimportant {
   list-style-image: url("chrome://messenger/skin/icons/search-favorite.png");
 }
 
-listcell.unread {
-    font-weight: bold;
+/* I cheated by copying flaggedmail.png and dot.png from thunderbird's
+ * theme to my chrome/content directory... can put custom images here
+ * later. */
+treechildren::-moz-tree-image(starred)
+{
+  list-style-image: url("flaggedmail.png");
 }
 
-image.lb-important {
-  /*list-style-image: url("chrome://messenger/skin/icons/flaggedmail.png");*/
-  list-style-image: url("flaggedmail.png");
+treechildren::-moz-tree-image(unstarred)
+{
+  list-style-image: url("dot.png");
+}
+
+treechildren::-moz-tree-cell-text(unread)
+{
+  font-weight: bold;
 }

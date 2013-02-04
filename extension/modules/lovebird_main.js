@@ -12,8 +12,6 @@ Cu.import("resource://gre/modules/Services.jsm"); // needed for Services.io etc.
 const myEmail = "jono@fastmail.fm";
 
 
-
-
   function getMessageBody(msgUri) {
 
     let msgURI = Services.io.newURI(msgUri, null, null);
@@ -181,12 +179,13 @@ Peep.prototype = {
 
 
 var LovebirdModule = function() {
+  // module variables:
   let myPeople = {};
   // dictionary keyed on the email address of the person; will contain
   // identity object and message history for that person.
 
   let lbTabDocument = null;
-  let lastSelectedPerson = null;
+  let m_lastSelectedPerson = null;
   let uiDelayTimer = null;
 
   function clearList(listElem) {
@@ -468,7 +467,7 @@ var LovebirdModule = function() {
     // TODO maybe re-sort the people list, if change in status of this
     // person would affect where in the list they should appear.
 
-    if (emailAddr === lastSelectedPerson) {
+    if (emailAddr === m_lastSelectedPerson) {
       // If person is the last one clicked on (so their msg history is
       // displayed) then recreate that too since it probably has a new
       // msg on top.
@@ -575,53 +574,59 @@ var LovebirdModule = function() {
     }); // end getPeeps
   }
 
+  // New one using tree:
   function showEmailForPerson(email) {
-    var lastSelectedPerson = email;
-    var msgList = lbTabDocument.getElementById("lb-msg-list");
-    clearList(msgList);
-    
+    m_lastSelectedPerson = email;
+    var msgTree = lbTabDocument.getElementById("lb-msg-tree");
     var person = myPeople[email];
     var conversations = person.getConversations();
+    var treeView = {
+      rowCount : conversations.length,
+      getCellText : function(row, column){
+        var convo = conversations[row];
+        switch (column.id) {
+        case "subjectColumn":
+          return convo.getSubject();
+        case "starColumn":
+          return "";
+        case "dateColumn":
+          return niceDateFormat(convo.getLastMsgDate());
+        }
+      },
+      setTree: function(treebox){ this.treebox = treebox; },
+      isContainer: function(row){ return false; },
+      isSeparator: function(row){ return false; },
+      isSorted: function(){ return false; },
+      getLevel: function(row){ return 0; },
+      getImageSrc: function(row,col){ return null; },
+      getRowProperties: function(row,props){},
+      getCellProperties: function(row,col,props){
+        var convo = conversations[row];
+        var atomService = Components.classes["@mozilla.org/atom-service;1"].getService(Components.interfaces.nsIAtomService);
+        
+        // WTF is this shit
+        // XUL trees have the weirdest API ever
+        
+        // row is integer, but col is an object...
+        if (col.id == "starColumn") {
+          var atom = atomService.getAtom("starred");
+          // TODO or "unstarred", depending on stuff not yet implemented
+          props.AppendElement(atom);
+          // can return a property here for starred (or unstarred)
+          // cells - these become css selectors
+        } else {
+          if (convo.hasUnread()) {
+            var atom = atomService.getAtom("unread");
+            props.AppendElement(atom);
+          }
+        }
+      },
+      getColumnProperties: function(colid,col,props){}
+    };
 
-    for (var i = 0; i < conversations.length; i++) {
-      var convo = conversations[i];
-      let row = lbTabDocument.createElement('listitem');
-      let cell = lbTabDocument.createElement('listcell');
-      
-      cell = lbTabDocument.createElement('listcell');
-      cell.setAttribute('label', convo.getSubject());
-      if (convo.hasUnread()) {
-        cell.setAttribute("class", "unread");
-        // TODO unset this class when you read it...
-      }
-      row.appendChild(cell);
-
-      cell = lbTabDocument.createElement('listcell');
-      cell.setAttribute('label', "");
-      /*if (msg.starred) {
-        var img = lbTabDocument.createElement('image');
-        img.setAttribute("class", "lb-important");
-        cell.appendChild(img);
-      }*/
-      row.appendChild(cell);
-      
-      cell = lbTabDocument.createElement('listcell');
-      cell.setAttribute('label',
-                        niceDateFormat(convo.getLastMsgDate()));
-      if (convo.hasUnread()) {
-        cell.setAttribute("class", "unread");
-      }
-      row.appendChild(cell);
-
-      // Other useful properties of msg:
-      // tags, starred, read
-      
-      // store conversation ID in attribute of the row
-      // so click and double-click handlers know what to do
-      row.setAttribute("lb_convo_id", convo.id);
-      
-      msgList.appendChild(row);
-    }
+    // Other useful properties of msg:
+    // tags, starred, read
+    msgTree.view = treeView;
   }
 
   function sortPeopleBy(sortOrder) {
@@ -691,6 +696,17 @@ var LovebirdModule = function() {
     return null;
   }
 
+  function getConvoIdForRow(index) {
+    dump("Trying to getConvoIdForRow " + index + "\n");
+    dump("Displayed person is " + m_lastSelectedPerson + "\n");
+    var person = myPeople[m_lastSelectedPerson];
+    var convos = person.getConversations();
+    return convos[index].id;
+    // TODO if this ID is always going to be passed right
+    // back to getConvoById then we could just return
+    // convos[index] and save a step.
+  }
+
   function getHtmlForThread(convoId) {
     var convo = getConvoById(convoId);
     if (convo) {
@@ -718,6 +734,7 @@ var LovebirdModule = function() {
     openReplyWindowForThread: openReplyWindowForThread,
     startNewMailListener: startNewMailListener,
     openNewMailToAddress: openNewMailToAddress,
-    getHtmlForThread: getHtmlForThread
+    getHtmlForThread: getHtmlForThread,
+    getConvoIdForRow: getConvoIdForRow
   };
 }();

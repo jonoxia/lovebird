@@ -10,9 +10,16 @@ var Lovebird_NS = function() {
   // Public interface:
   return {
     openTab: function() {
-      LovebirdModule.openLovebirdTab();
+      dump("Opening window\n");
+	var newWindow = window.open(
+          "chrome://lovebird/content/tree-window.xul",
+          "Lovebird_treeWindow",
+          "chrome,titlebar,centerscreen,dialog=no"
+        );
+      //window.open( "chrome://lovebird/content/tree-window.xul", "treetestwindow");
+      //LovebirdModule.openLovebirdTab();
     },
-    
+
     onLoad: function() {
       LovebirdModule.startNewMailListener();
       LovebirdModule.loadEverybody(document);
@@ -40,16 +47,15 @@ var Lovebird_NS = function() {
       let clickedEmail = event.originalTarget.getAttribute("lb_person_email");
       LovebirdModule.openNewMailToAddress(clickedEmail);
     },
-    
-    msgListDblClick: function(event) {
-      let convoID = event.originalTarget.getAttribute("lb_convo_id");
-      LovebirdModule.openReplyWindowForThread(convoID);
-    },
-    
-    msgListClick: function(event) {
-      let convoID = event.originalTarget.getAttribute("lb_convo_id");
+
+    msgTreeSelect: function() {
+      var view = document.getElementById("lb-msg-tree").view;
+      var sel = view.selection.currentIndex; //returns -1 if the tree is not focused
+      //var treeItem = view.getItemAtIndex(sel); // not function
+      dump("You selected row " + sel + "\n");
+      var convoID = LovebirdModule.getConvoIdForRow(sel);
       let browser = document.getElementById("lb-msg-body"); 
-      
+
       /* We want to display the message body in the browser pane.
        * There's probably a right way to do this, but for now
        * here's a very silly hack involving a data URL. Replacing
@@ -59,6 +65,33 @@ var Lovebird_NS = function() {
                           LovebirdModule.getHtmlForThread(convoID));
     },
 
+    msgTreeClick: function(event) {
+      var tree = document.getElementById("lb-msg-tree");
+      var tbo = tree.treeBoxObject;
+      
+      // get the row, col and child element at the point
+      var row = { }, col = { }, child = { };
+      tbo.getCellAt(event.clientX, event.clientY, row, col, child);
+      if (col.value.id == "starColumn") {
+        dump("You clicked the star column of row... " + row.value + "\n");
+        // TODO deal with star click!
+      }
+    },
+
+    msgTreeDblClick: function(event) {
+      var tree = document.getElementById("lb-msg-tree");
+      var tbo = tree.treeBoxObject;
+      
+      // get the row, col and child element at the point
+      var row = { }, col = { }, child = { };
+      tbo.getCellAt(event.clientX, event.clientY, row, col, child);
+      
+      //var cellText = tree.view.getCellText(row.value, col.value);
+      //dump("you double-clicked at row = " + row + " col = " + col + "\n");
+      var convoID = LovebirdModule.getConvoIdForRow(row.value);
+      LovebirdModule.openReplyWindowForThread(convoID);
+    },
+    
     emailFieldKeyUp: function(event) {
       dump("You typed in the email field.\n");
     },
