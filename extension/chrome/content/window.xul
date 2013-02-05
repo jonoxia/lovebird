@@ -54,9 +54,11 @@
                onclick="Lovebird_NS.personListClick(event);"
                ondblclick="Lovebird_NS.personListDblClick(event);">
         <listhead>
+          <listheader label="?"/>
           <listheader label="Person"/>
         </listhead>
         <listcols>
+          <listcol flex="0"/>
           <listcol flex="1"/>
         </listcols>
       </listbox>
@@ -68,8 +70,9 @@
               onclick="Lovebird_NS.msgTreeClick(event);"
               ondblclick="Lovebird_NS.msgTreeDblClick(event);">
           <treecols>
+            <treecol id="inOutColumn" label="In/Out" flex="0"/>
             <treecol id="subjectColumn" label="Subject" flex="2"/>
-            <treecol id="starColumn" label="NR?" flex="0"/>
+            <treecol id="needsReplyColumn" label="NR?" flex="0"/>
             <treecol id="dateColumn" label="Date" flex="1"/>
           </treecols>
           

@@ -330,11 +330,17 @@ var LovebirdModule = function() {
     
     //let theList = document.getElementById("lb-main-list");
     let row = lbTabDocument.createElement('listitem');
-    let cell = lbTabDocument.createElement('listcell');
+    let statusCell = lbTabDocument.createElement('listcell');
+    let personCell = lbTabDocument.createElement('listcell');
+    row.appendChild(statusCell);
+    row.appendChild(personCell);
 
-    cell.setAttribute("label", person.getName());
-    row.setAttribute("class", person.getStatus());
-    row.appendChild(cell);
+    personCell.setAttribute("label", person.getName());
+
+    var img = lbTabDocument.createElement("image");
+    img.setAttribute("class", person.getStatus());
+    statusCell.appendChild(img);
+
     /* stash the email address in an attribute of the row
      * so when user clicks on it we can retrieve it from the
      * click event's target. */
@@ -600,7 +606,7 @@ var LovebirdModule = function() {
         switch (column.id) {
         case "subjectColumn":
           return convo.getSubject();
-        case "starColumn":
+        case "needsReplyColumn":
           return "";
         case "dateColumn":
           return niceDateFormat(convo.getLastMsgDate());
@@ -621,11 +627,14 @@ var LovebirdModule = function() {
         // XUL trees have the weirdest API ever
         
         // row is integer, but col is an object...
-        if (col.id == "starColumn") {
+        if (col.id == "needsReplyColumn") {
           /* Set a property to make the cell starred or unstarred -
            * there are css selectors in lovebird.css that set the
            * star image based on this property. */
           var atom = atomService.getAtom(convo.needsReply()?"needsReply": "doesntNeed");
+          props.AppendElement(atom);
+        } if (col.id == "inOutColumn") {
+          var atom = atomService.getAtom((convo.getStatus() == "sent") ?"outgoing": "incoming");
           props.AppendElement(atom);
         } else {
           if (convo.hasUnread()) {

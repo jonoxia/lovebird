@@ -1,17 +1,19 @@
-listitem.sent {
-    background-color: #b0ffb0;
+listitem {
     font-size: 14pt;
 }
 
-listitem.unanswered {
-    background-color: #ffb0b0;
-    font-size: 14pt;
+listcell image.sent {
+    list-style-image: url("check.png");
 }
 
-listitem.unimportant {
+listcell image.unanswered {
+    list-style-image: url("message-mail-new.png");
+}
+
+/*listitem.unimportant {
     background-color: #ffffb0;
     font-size: 14pt;
-}
+}*/
 
 #lb-add-person {
   list-style-image: url("chrome://messenger/skin/icons/search-favorite.png");
@@ -33,4 +35,14 @@ treechildren::-moz-tree-image(doesntNeed)
 treechildren::-moz-tree-cell-text(unread)
 {
   font-weight: bold;
+}
+
+treechildren::-moz-tree-image(incoming)
+{
+  list-style-image: url("message-mail.png");
+}
+
+treechildren::-moz-tree-image(outgoing)
+{
+  list-style-image: url("symbol-replied.png");
 }

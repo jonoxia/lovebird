@@ -62,7 +62,7 @@ var Lovebird_NS = function() {
       // get the row, col and child element at the point
       var row = { }, col = { }, child = { };
       tbo.getCellAt(event.clientX, event.clientY, row, col, child);
-      if (col.value.id == "starColumn") {
+      if (col.value.id == "needsReplyColumn") {
         LovebirdModule.handleStarClick(row.value);
       }
     },
