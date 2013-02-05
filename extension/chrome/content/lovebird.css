@@ -3,11 +3,11 @@ listitem {
 }
 
 listcell image.sent {
-    list-style-image: url("check.png");
+    list-style-image: url("doesnt-need.png");
 }
 
 listcell image.unanswered {
-    list-style-image: url("message-mail-new.png");
+    list-style-image: url("needs-reply.png");
 }
 
 /*listitem.unimportant {
@@ -24,12 +24,12 @@ listcell image.unanswered {
  * later. */
 treechildren::-moz-tree-image(needsReply)
 {
-  list-style-image: url("message-mail-new.png");
+  list-style-image: url("needs-reply.png");
 }
 
 treechildren::-moz-tree-image(doesntNeed)
 {
-  list-style-image: url("check.png");
+  list-style-image: url("doesnt-need.png");
 }
 
 treechildren::-moz-tree-cell-text(unread)
@@ -39,10 +39,10 @@ treechildren::-moz-tree-cell-text(unread)
 
 treechildren::-moz-tree-image(incoming)
 {
-  list-style-image: url("message-mail.png");
+  list-style-image: url("incoming.png");
 }
 
 treechildren::-moz-tree-image(outgoing)
 {
-  list-style-image: url("symbol-replied.png");
+  list-style-image: url("outgoing.png");
 }
