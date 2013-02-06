@@ -38,6 +38,13 @@ const myEmail = "jono@fastmail.fm";
   }
 
 
+function addTreeProp(props, value) {
+  // This uses a really weird API...
+  let atomService = Cc["@mozilla.org/atom-service;1"].getService(Ci.nsIAtomService);
+  props.AppendElement(atomService.getAtom(value));
+}
+
+
 function Convo(convoId) {
   this.id = convoId;
   /*this.lastMsgDate = null;
@@ -364,29 +371,22 @@ var LovebirdModule = function() {
     isSorted: function(){ return false; },
     getLevel: function(row){ return 0; },
     getImageSrc: function(row,col){ return null; },
-    getRowProperties: function(row,props){
-      // make text large
-      var atomService = Cc["@mozilla.org/atom-service;1"].getService(Ci.nsIAtomService);
-    },
+    getRowProperties: function(row,props){},
     getCellProperties: function(row,col,props){
       if (row >= m_sortedPeople.length) { return; }
       var email = m_sortedPeople[row];
       var person = myPeople[email];
-      var atomService = Cc["@mozilla.org/atom-service;1"].getService(Ci.nsIAtomService);
       if (col.id == "personNameColumn") {
-        var atom = atomService.getAtom("large");
-        props.AppendElement(atom);
+        addTreeProp(props, "large");
       }
       if (col.id == "personStatusColumn") {
         if (person.getStatus() == "unanswered") {
-          var atom = atomService.getAtom("needsReply");
-          props.AppendElement(atom);
+          addTreeProp(props, "needsReply");
         }
       }
     },
     getColumnProperties: function(colid,col,props){}
   };
-
 
   let MyQueryListener = function(personId) {
     this.personId = personId;
@@ -665,26 +665,18 @@ var LovebirdModule = function() {
       getImageSrc: function(row,col){ return null; },
       getRowProperties: function(row,props){},
       getCellProperties: function(row,col,props){
-        var convo = conversations[row];
-        var atomService = Cc["@mozilla.org/atom-service;1"].getService(Ci.nsIAtomService);
-        
-        // WTF is this shit
-        // XUL trees have the weirdest API ever
-        
+        var convo = conversations[row];        
         // row is integer, but col is an object...
         if (col.id == "needsReplyColumn") {
           /* Set a property to make the cell starred or unstarred -
            * there are css selectors in lovebird.css that set the
            * star image based on this property. */
-          var atom = atomService.getAtom(convo.needsReply()?"needsReply": "doesntNeed");
-          props.AppendElement(atom);
+          addTreeProp(props, convo.needsReply()?"needsReply": "doesntNeed");
         } if (col.id == "inOutColumn") {
-          var atom = atomService.getAtom((convo.getStatus() == "sent") ?"outgoing": "incoming");
-          props.AppendElement(atom);
+          addTreeProp(props, (convo.getStatus() == "sent") ?"outgoing": "incoming");
         } else {
           if (convo.hasUnread()) {
-            var atom = atomService.getAtom("unread");
-            props.AppendElement(atom);
+            addTreeProp(props, "unread");
           }
         }
       },
