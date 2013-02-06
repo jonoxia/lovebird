@@ -44,7 +44,25 @@ function Convo(convoId) {
   this.lastSenderIsMe = false;
   this.pendingDraft = false;*/
   this._hasUnread = false;
-  this._needsReplyFlag = true;    // TODO read from DB
+  this._needsReplyFlag = true;
+  
+  // Have we stored a user pref about whether this convo needs
+  // a reply?
+  let self = this;
+  LovebirdNameStore.getConvoStatus(this.id, function(status) {
+    if (status == -1) {
+      // status never set before
+      self._needsReplyFlag = true;
+    } else {
+      switch(status) {
+        case 0:
+        self._needsReplyFlag = false;
+        break;
+        case 1:
+        self._needsReplyFlag = true;
+      }
+    }
+  });
 
   this.msgColls = [];
 }
@@ -86,19 +104,21 @@ Convo.prototype = {
   
   markNeedsReply: function(newVal) {
     this._needsReplyFlag = newVal;
-    // TODO persist
+    var statusCode = (this._needsReplyFlag)?1:0;
+    // Persist:
+    LovebirdNameStore.rememberConvoStatus(this.id, statusCode);
   },
 
   toggleNeedsReply: function() {
-    this._needsReplyFlag = !this._needsReplyFlag;
+    this.markNeedsReply( !this._needsReplyFlag );
   },
 
   needsReply: function() {
-    if (this.getStatus() == "sent") {
+    return this._needsReplyFlag;
+    /*if (this.getStatus() == "sent") {
       return false;
     } else {
-      return this._needsReplyFlag;
-    }
+    }*/
   },
 
   getStatus: function() {

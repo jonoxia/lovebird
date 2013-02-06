@@ -4,8 +4,8 @@ const Ci = Components.interfaces;
 const Cc = Components.classes;
 const Cu = Components.utils;
 const DB_FILE_NAME = "lovebird_favorite_people.sql";
-const DB_TABLE_NAME = "favorite_people";
-
+const PEOPLE_TABLE = "favorite_people";
+const CONVO_TABLE = "conversation_statuses";
 
 var LovebirdNameStore = {
     _dbConnection: null,
@@ -22,23 +22,27 @@ var LovebirdNameStore = {
 	dump("Initing db\n");
 	// get path to my profile directory / dbFileName:
 	try {
-	    let file = this._dirSvc.get("ProfD", Ci.nsIFile);
-	    file.append(DB_FILE_NAME);
-	    // openDatabase creates the file if it's not there yet:
-	    dump("Opening file.\n");
-	    this._dbConnection = this._storSvc.openDatabase(file);
-	    // Create the table only if it does not already exist:
-	    if(!this._dbConnection.tableExists(DB_TABLE_NAME)){
-		let schema = "CREATE TABLE " + DB_TABLE_NAME +
-		    " (email TEXT);";
-		dump("Creating table.\n");
-		this._dbConnection.executeSimpleSQL(schema);
-	    } else{
-		dump("Table exists already.\n");
-	    }
-	    dump("Database initialized OK.\n");
+	  let file = this._dirSvc.get("ProfD", Ci.nsIFile);
+	  file.append(DB_FILE_NAME);
+	  // openDatabase creates the file if it's not there yet:
+	  dump("Opening file.\n");
+	  this._dbConnection = this._storSvc.openDatabase(file);
+	  // Create the table only if it does not already exist:
+	  if (!this._dbConnection.tableExists(PEOPLE_TABLE)){
+	    let schema = "CREATE TABLE " + PEOPLE_TABLE +
+	      " (email TEXT);";
+	    dump("Creating table " + PEOPLE_TABLE + "\n");
+	    this._dbConnection.executeSimpleSQL(schema);
+	  }
+          if (!this._dbConnection.tableExists(CONVO_TABLE)) {
+	    let schema = "CREATE TABLE " + CONVO_TABLE +
+	      " (convo_id INTEGER, status INTEGER);";
+	    dump("Creating table " + CONVO_TABLE + "\n");
+	    this._dbConnection.executeSimpleSQL(schema);
+          }
+          dump("Database initialized OK.\n");
 	} catch(e) {
-	    dump("Error initing database: " + e + "\n");
+	  dump("Error initing database: " + e + "\n");
 	}
     },
 
@@ -48,7 +52,7 @@ var LovebirdNameStore = {
 	    // TODO what if init fails?
 	}
 
-	let selectSql = "SELECT email FROM " + DB_TABLE_NAME + ";";
+	let selectSql = "SELECT email FROM " + PEOPLE_TABLE + ";";
 	let selStmt = this._dbConnection.createStatement(selectSql);
 	let addresses = [];
 	selStmt.executeAsync({
@@ -90,7 +94,7 @@ var LovebirdNameStore = {
 	    // TODO what if init fails?
 	}
 
-	let insertSql = "INSERT INTO " + DB_TABLE_NAME
+	let insertSql = "INSERT INTO " + PEOPLE_TABLE
 	    + " VALUES (?1);";
 	let insStmt = this._dbConnection.createStatement(insertSql);
 	// TODO make sure this email address isn't already
@@ -107,5 +111,73 @@ var LovebirdNameStore = {
 	    }
 	});
 	insStmt.finalize();
+    },
+
+  getConvoStatus: function(convoId, callback) {
+    if (!this._dbConnection) {
+      this._init();
+      // TODO what if init fails?
     }
+    let selectSql = "SELECT status FROM " + CONVO_TABLE 
+      + " WHERE convo_id=?1;";
+    let selStmt = this._dbConnection.createStatement(selectSql);
+    selStmt.params[0] = convoId;
+    let convoStatus = -1; // This will mean "no status stored yet".
+    selStmt.executeAsync({
+      handleResult: function(aResultSet) {
+        var row = aResultSet.getNextRow();
+        if (row) {
+          convoStatus = row.getResultByName("status");
+	}
+      },
+      handleError: function(aError) {
+        dump("ERROR: " + aError + "\n");
+	if (callback) {
+	  callback(convoStatus);
+	}
+      },
+      handleCompletion: function(aReason) {
+	if (callback) {
+	  callback(convoStatus);
+	}
+      }
+    });
+    selStmt.finalize();
+  },
+
+  rememberConvoStatus: function(convoId, status) {
+    if (!this._dbConnection) {
+      this._init();
+      // TODO what if init fails?
+    }
+    var dbConnection = this._dbConnection;
+    LovebirdNameStore.getConvoStatus(convoId, function(exists) {
+      let stmt;
+      if (exists == -1) {
+        // no entry yet: Insert one!
+        let insertSql = "INSERT INTO " + CONVO_TABLE
+          + " VALUES (?1, ?2);";
+        stmt = dbConnection.createStatement(insertSql);
+	stmt.params[0] = convoId;
+        stmt.params[1] = status;
+      } else {
+        // Entry exists: Update it!
+        let updateSql = "UPDATE " + CONVO_TABLE + " SET status=?1"
+          + " WHERE convo_id = ?2;";
+        stmt = dbConnection.createStatement(updateSql);
+        stmt.params[0] = status;
+        stmt.params[1] = convoId;
+      }
+      stmt.executeAsync({
+        handleResult: function(aResultSet) {
+        },
+        handleError: function(aError) {
+	  dump("RememerConvoStatus got error: " + aError + "\n");
+        },
+        handleCompletion: function(aReason) {
+        }
+      });
+      stmt.finalize();
+    });
+  }
 };
