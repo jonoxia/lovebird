@@ -1,27 +1,15 @@
-listitem {
+treechildren::-moz-tree-cell-text(large)
+{
     font-size: 14pt;
+    /* TODO make line height taller */
 }
-
-listcell image.sent {
-    list-style-image: url("doesnt-need.png");
-}
-
-listcell image.unanswered {
-    list-style-image: url("needs-reply.png");
-}
-
-/*listitem.unimportant {
-    background-color: #ffffb0;
-    font-size: 14pt;
-}*/
 
 #lb-add-person {
   list-style-image: url("chrome://messenger/skin/icons/search-favorite.png");
 }
 
-/* I cheated by copying flaggedmail.png and dot.png from thunderbird's
- * theme to my chrome/content directory... can put custom images here
- * later. */
+/* I cheated by putting the images in same dir as this css file/
+ * They should really go under skin/. */
 treechildren::-moz-tree-image(needsReply)
 {
   list-style-image: url("needs-reply.png");

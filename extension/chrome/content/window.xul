@@ -50,18 +50,16 @@
     </toolbar>
 
     <hbox flex="1">
-      <listbox flex="1" id="lb-ppl-list"
-               onclick="Lovebird_NS.personListClick(event);"
-               ondblclick="Lovebird_NS.personListDblClick(event);">
-        <listhead>
-          <listheader label="?"/>
-          <listheader label="Person"/>
-        </listhead>
-        <listcols>
-          <listcol flex="0"/>
-          <listcol flex="1"/>
-        </listcols>
-      </listbox>
+      
+      <tree flex="1" id="lb-ppl-tree"
+               onselect="Lovebird_NS.personTreeSelect();"
+               ondblclick="Lovebird_NS.personTreeDblClick(event);">
+        <treecols>
+          <treecol id="personStatusColumn" label="?" flex="0"/>
+          <treecol id="personNameColumn" label="Person" flex="2"/>
+        </treecols>
+        <treechildren/>
+      </tree>
 
       <vbox flex="2">
 

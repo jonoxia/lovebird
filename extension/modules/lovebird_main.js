@@ -217,6 +217,9 @@ var LovebirdModule = function() {
   // dictionary keyed on the email address of the person; will contain
   // identity object and message history for that person.
 
+  let m_sortedPeople = [];
+  // ordered array of email addresses used to display people tree
+
   let lbTabDocument = null;
   let m_lastSelectedPerson = null;
   let uiDelayTimer = null;
@@ -342,33 +345,48 @@ var LovebirdModule = function() {
     // TODO Improve this page: https://developer.mozilla.org/en-US/docs/Extensions/Thunderbird/HowTos/Common_Thunderbird_Extension_Techniques/Add_New_Tab
   }
 
-  
-  function addRowToPplList(person) {
-    if (!lbTabDocument) {
-      return;
-    }
-    
-    //let theList = document.getElementById("lb-main-list");
-    let row = lbTabDocument.createElement('listitem');
-    let statusCell = lbTabDocument.createElement('listcell');
-    let personCell = lbTabDocument.createElement('listcell');
-    row.appendChild(statusCell);
-    row.appendChild(personCell);
+  var PeopleTreeView = {
+    get rowCount() { return m_sortedPeople.length;},
+    getCellText : function(row, column){
+      if (row >= m_sortedPeople.length) { return "";}
+      var email = m_sortedPeople[row];
+      var person = myPeople[email];
+      switch (column.id) {
+      case "personStatusColumn":
+        return "";
+      case "personNameColumn":
+        return person.getName();
+      }
+    },
+    setTree: function(treebox){ this.treebox = treebox; },
+    isContainer: function(row){ return false; },
+    isSeparator: function(row){ return false; },
+    isSorted: function(){ return false; },
+    getLevel: function(row){ return 0; },
+    getImageSrc: function(row,col){ return null; },
+    getRowProperties: function(row,props){
+      // make text large
+      var atomService = Cc["@mozilla.org/atom-service;1"].getService(Ci.nsIAtomService);
+    },
+    getCellProperties: function(row,col,props){
+      if (row >= m_sortedPeople.length) { return; }
+      var email = m_sortedPeople[row];
+      var person = myPeople[email];
+      var atomService = Cc["@mozilla.org/atom-service;1"].getService(Ci.nsIAtomService);
+      if (col.id == "personNameColumn") {
+        var atom = atomService.getAtom("large");
+        props.AppendElement(atom);
+      }
+      if (col.id == "personStatusColumn") {
+        if (person.getStatus() == "unanswered") {
+          var atom = atomService.getAtom("needsReply");
+          props.AppendElement(atom);
+        }
+      }
+    },
+    getColumnProperties: function(colid,col,props){}
+  };
 
-    personCell.setAttribute("label", person.getName());
-
-    var img = lbTabDocument.createElement("image");
-    img.setAttribute("class", person.getStatus());
-    statusCell.appendChild(img);
-
-    /* stash the email address in an attribute of the row
-     * so when user clicks on it we can retrieve it from the
-     * click event's target. */
-    row.setAttribute("lb_person_email", person.getEmailAddr());
- 
-    let personList = lbTabDocument.getElementById("lb-ppl-list");
-    personList.appendChild(row);
-  }
 
   let MyQueryListener = function(personId) {
     this.personId = personId;
@@ -405,8 +423,12 @@ var LovebirdModule = function() {
         peep.addMessage(collection.items[i]);
       }
 
-      // add this new record to lovebird XUL list
-      addRowToPplList(peep);
+      // Add person to sorted array used to populate people tree:
+      m_sortedPeople.push(email);
+
+      // Inform tree that a new row was just added so it will redraw
+      var tree = lbTabDocument.getElementById("lb-ppl-tree");
+      tree.treeBoxObject.rowCountChanged(m_sortedPeople.length -1, 1);
     }
   };
 
@@ -423,7 +445,6 @@ var LovebirdModule = function() {
     let listener = new MyQueryListener(identity);
     // The query listener object will handle filling in the list
     // rows as data is recieved.
-    dump("loadDataForPerson ( " + email + " ) is happening.\n");
     let clcn = query.getCollection(listener);
   }
 
@@ -490,17 +511,13 @@ var LovebirdModule = function() {
       person.addMessage(newMsgCollection.items[i]);
     }
 
-    // find this person's row in the people list so it can be updated
+    // Person's status may have changed, so find their row in
+    // the people tree and update it:
     dump("Trying to update person list entry.\n");
-    let personList = lbTabDocument.getElementById("lb-ppl-list");
-    let children = personList.childNodes;
-    for (var i = 0; i < children.length; i++) {
-      let row = children[i];
-      if (row.getAttribute("lb_person_email") == emailAddr) {
-        dump("Found it. Updating.\n");
-        row.setAttribute("class", person.getStatus());
-        break;
-      }
+    let rowIndex = m_sortedPeople.indexOf(emailAddr);
+    if (rowIndex > -1) {
+      let tree = lbTabDocument.getElementById("lb-ppl-tree");
+      tree.treeBoxObject.invalidateRow(modifiedRow);
     }
 
     // TODO maybe re-sort the people list, if change in status of this
@@ -513,6 +530,9 @@ var LovebirdModule = function() {
       dump("Updated selected person, so relisting email.\n");
       // TODO this part seems to not be happening, test.
       showEmailForPerson(emailAddr);
+      // TODO this will recrete the whole message tree view object.
+      // Maybe better to just invalidate the tree? But what if the
+      // number of rows changed?
     }
   }
 
@@ -587,6 +607,11 @@ var LovebirdModule = function() {
     /*See:  https://developer.mozilla.org/en-US/docs/Thunderbird/Creating_a_Gloda_message_query and
       https://developer.mozilla.org/en-US/docs/Thunderbird/Gloda_examples
     */
+
+    // Set up tree view for people list:
+    var pplTree = lbTabDocument.getElementById("lb-ppl-tree");
+    pplTree.view = PeopleTreeView;
+
     // Read list of lovely peeps from sqlite:
     LovebirdNameStore.getPeeps(function(peeps) {
       // Query for an identity for each:
@@ -620,7 +645,7 @@ var LovebirdModule = function() {
     var person = myPeople[email];
     var conversations = person.getConversations();
     var treeView = {
-      rowCount : conversations.length,
+      get rowCount() {return conversations.length;},
       getCellText : function(row, column){
         var convo = conversations[row];
         switch (column.id) {
@@ -641,7 +666,7 @@ var LovebirdModule = function() {
       getRowProperties: function(row,props){},
       getCellProperties: function(row,col,props){
         var convo = conversations[row];
-        var atomService = Components.classes["@mozilla.org/atom-service;1"].getService(Components.interfaces.nsIAtomService);
+        var atomService = Cc["@mozilla.org/atom-service;1"].getService(Ci.nsIAtomService);
         
         // WTF is this shit
         // XUL trees have the weirdest API ever
@@ -709,9 +734,6 @@ var LovebirdModule = function() {
       }
       break;
     }
-    
-    let theList = lbTabDocument.getElementById("lb-ppl-list");
-    clearList(theList);
 
     // make array to sort out of myPeople (person, lastMsg) tuples
     var arrayToSort = [];
@@ -722,10 +744,16 @@ var LovebirdModule = function() {
     // sort it according to sort function
     arrayToSort.sort(sortFunction);
     
-    // refill list with newly ordered records
+    // refill tree with newly ordered email addresses
+    m_sortedPeople = [];
     for (var i = 0; i < arrayToSort.length; i++) {
-      addRowToPplList(arrayToSort[i]);
+      //addRowToPplList(arrayToSort[i]);
+      m_sortedPeople.push(arrayToSort[i].getEmailAddr());
     }
+
+    // Invalidate the tree to cause it to be redrawn
+    var tree = lbTabDocument.getElementById("lb-ppl-tree");
+    tree.treeBoxObject.invalidate();
   }
 
   function getConvoForRow(index) {
@@ -764,18 +792,32 @@ var LovebirdModule = function() {
     }
   }
 
+  function showEmailForPersonIndex(rowIndex) {
+    if (rowIndex >= 0 && rowIndex < m_sortedPeople.length) {
+      showEmailForPerson(m_sortedPeople[rowIndex]);
+    }
+  }
+  
+  function openNewEmailToPersonIndex(rowIndex) {
+    if (rowIndex >= 0 && rowIndex < m_sortedPeople.length) {
+      openNewMailToAddress(m_sortedPeople[rowIndex]);
+    }
+  }
+
   return {
     openLovebirdTab: openLovebirdTab,
     loadEverybody: loadEverybody,
     luvPerson: luvPerson,
     luvPersonByEmail: luvPersonByEmail,
     luvSenderOfMessage: luvSenderOfMessage,
-    showEmailForPerson: showEmailForPerson,
+    showEmailForPerson: showEmailForPerson, // Maybe not public?
     sortPeopleBy: sortPeopleBy,
     openReplyWindowForThread: openReplyWindowForThread,
     startNewMailListener: startNewMailListener,
-    openNewMailToAddress: openNewMailToAddress,
+    openNewMailToAddress: openNewMailToAddress, // Maybe not public?
     getHtmlForThread: getHtmlForThread,
-    handleStarClick: handleStarClick
+    handleStarClick: handleStarClick,
+    showEmailForPersonIndex: showEmailForPersonIndex,
+    openNewEmailToPersonIndex: openNewEmailToPersonIndex
   };
 }();

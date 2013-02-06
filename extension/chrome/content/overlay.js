@@ -31,34 +31,45 @@ var Lovebird_NS = function() {
       LovebirdModule.luvSenderOfMessage(selectedMsg);
     },
     
-    personListClick: function(event) {
-      let clickedEmail = event.originalTarget.getAttribute("lb_person_email");
-      LovebirdModule.showEmailForPerson(clickedEmail);        
+    personTreeSelect: function() {
+      // replaces personListClick
+      var view = document.getElementById("lb-ppl-tree").view;
+      var rowIndex = view.selection.currentIndex; //returns -1 if the tree is not focused
+      LovebirdModule.showEmailForPersonIndex(rowIndex);
     },
-
-    personListDblClick: function(event) {
-      let clickedEmail = event.originalTarget.getAttribute("lb_person_email");
-      LovebirdModule.openNewMailToAddress(clickedEmail);
+    
+    personTreeDblClick: function(event) {
+      // replaces personListDblClick
+      var tree = document.getElementById("lb-msg-tree");
+      var tbo = tree.treeBoxObject;
+      
+      // get the row, col and child element at the point
+      var row = { }, col = { }, child = { };
+      tbo.getCellAt(event.clientX, event.clientY, row, col, child);
+      
+      LovebirdModule.openNewEmailToPersonIndex(row.value);
     },
 
     msgTreeSelect: function() {
       var view = document.getElementById("lb-msg-tree").view;
       var rowIndex = view.selection.currentIndex; //returns -1 if the tree is not focused
-      let browser = document.getElementById("lb-msg-body"); 
+      if (rowIndex != -1) {
+        let browser = document.getElementById("lb-msg-body"); 
 
-      /* We want to display the message body in the browser pane.
-       * There's probably a right way to do this, but for now
-       * here's a very silly hack involving a data URL. Replacing
-       * newlines with <br> for readability is the extent of the
-       * formatting.*/
-      browser.setAttribute("src","data:text/html;charset=UTF-8," +
-                          LovebirdModule.getHtmlForThread(rowIndex));
+        /* We want to display the message body in the browser pane.
+         * There's probably a right way to do this, but for now
+         * here's a very silly hack involving a data URL. Replacing
+         * newlines with <br> for readability is the extent of the
+         * formatting.*/
+        browser.setAttribute("src","data:text/html;charset=UTF-8," +
+                           LovebirdModule.getHtmlForThread(rowIndex));
+      }
     },
 
     msgTreeClick: function(event) {
       var tree = document.getElementById("lb-msg-tree");
       var tbo = tree.treeBoxObject;
-      
+     
       // get the row, col and child element at the point
       var row = { }, col = { }, child = { };
       tbo.getCellAt(event.clientX, event.clientY, row, col, child);
