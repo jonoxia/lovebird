@@ -9,9 +9,6 @@ Cu.import("resource:///modules/gloda/public.js");
 Cu.import("resource:///modules/mailServices.js"); // needed for MailServices.compose etc.
 Cu.import("resource://gre/modules/Services.jsm"); // needed for Services.io etc.
 
-const myEmail = "jono@fastmail.fm";
-
-
   function getMessageBody(msgUri) {
 
     let msgURI = Services.io.newURI(msgUri, null, null);
@@ -130,7 +127,9 @@ Convo.prototype = {
 
   getStatus: function() {
     // return values match css class names for rows
-    if (this.msgColls[0].from.value == myEmail) {
+    // TODO in the future maybe myEmail can have more than
+    // one email - it's sent if it's from any of them.
+    if (this.msgColls[0].from.value == LovebirdModule.myEmail) {
       return "sent";
     } else {
       return "unanswered";
@@ -231,6 +230,8 @@ var LovebirdModule = function() {
   let m_lastSelectedPerson = null;
   let uiDelayTimer = null;
 
+  let m_myEmail = null; // See getter of the public interface object
+
   function clearList(listElem) {
     // Remove all <listitem>s (but not other children) from the
     // list. careful: children is live, removing nodes changes indices.
@@ -281,23 +282,18 @@ var LovebirdModule = function() {
     return hours + ":" + minutes;
   }
 
-  function openReplyWindow(msgUri) {
-    // make the URI object
-    let msgURI = Services.io.newURI(msgUri, null, null);
-    let messenger = Cc["@mozilla.org/messenger;1"].createInstance(Ci.nsIMessenger);
-    // Get the message database header for the given message uri:
-    let msgDbHdr = messenger.msgHdrFromURI(msgUri);
-    
+  function whoAmI(folder) {
     /* We need to provide an identity to define who is
      * replying. Determining the right identity can be fairly
      * complicated. We'll try several fallbacks for getting an
      * appropriate identity. This code is a simplification of the
      * getIdentity functions in mailCommands.js. See
      * http://mxr.mozilla.org/comm-central/source/mail/base/content/mailCommands.js */
-    let folder = msgDbHdr.folder;
+
+    var server, identity;
     let server = folder.server;
-    /* If there was a custom identity for the folder of the original
-     * message, use that. */
+      /* If there was a custom identity for the folder of the original
+       * message, use that. */
     let identity = folder.customIdentity;
     if (!identity) {
       /* if there are multiple identities on the server, use the first
@@ -309,6 +305,23 @@ var LovebirdModule = function() {
         identity = MailServices.accounts.defaultAccount.defaultIdentity;
       }
     }
+    return identity;
+    /* TODO a person may have more than one identity, in which case
+     * this function will have to return multiples. Then we'll have
+     * to give them a choice of which one to send from. */
+  }
+
+  function openReplyWindow(msgUri) {
+    // make the URI object
+    let msgURI = Services.io.newURI(msgUri, null, null);
+    let messenger = Cc["@mozilla.org/messenger;1"].createInstance(Ci.nsIMessenger);
+    // Get the message database header for the given message uri:
+    let msgDbHdr = messenger.msgHdrFromURI(msgUri);
+
+    // Folder of the message we're replying to gives us clue
+    // about identity that should be used to send:
+    let identity = whoAmI(msgDbHdr.folder);
+    
     let msgWindow = Cc["@mozilla.org/messenger/msgwindow;1"]
       .createInstance(Ci.nsIMsgWindow);
     MailServices.compose.OpenComposeWindow(null, msgDbHdr, msgUri,
@@ -603,7 +616,9 @@ var LovebirdModule = function() {
   }
 
   function loadEverybody(document) {
+    // Save a reference to the lovebird XUL doc
     lbTabDocument = document;
+
     /*See:  https://developer.mozilla.org/en-US/docs/Thunderbird/Creating_a_Gloda_message_query and
       https://developer.mozilla.org/en-US/docs/Thunderbird/Gloda_examples
     */
@@ -810,6 +825,13 @@ var LovebirdModule = function() {
     getHtmlForThread: getHtmlForThread,
     handleStarClick: handleStarClick,
     showEmailForPersonIndex: showEmailForPersonIndex,
-    openNewEmailToPersonIndex: openNewEmailToPersonIndex
+    openNewEmailToPersonIndex: openNewEmailToPersonIndex,
+    
+    get myEmail() {
+      if (!m_myEmail) {
+        m_myEmail = MailServices.accounts.defaultAccount.defaultIdentity.email;
+      }
+      return m_myEmail;
+    }
   };
 }();
