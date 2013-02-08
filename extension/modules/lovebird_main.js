@@ -9,30 +9,29 @@ Cu.import("resource:///modules/gloda/public.js");
 Cu.import("resource:///modules/mailServices.js"); // needed for MailServices.compose etc.
 Cu.import("resource://gre/modules/Services.jsm"); // needed for Services.io etc.
 
-  function getMessageBody(msgUri) {
-
-    let msgURI = Services.io.newURI(msgUri, null, null);
-    let messenger = Cc["@mozilla.org/messenger;1"].createInstance(Ci.nsIMessenger);
-    // Get the message database header for the given message uri:
-    let aMessageHeader = messenger.msgHdrFromURI(msgUri);
-
-    let listener = Cc["@mozilla.org/network/sync-stream-listener;1"]
-      .createInstance(Ci.nsISyncStreamListener);
-
-    // does this give us back the original msgUri and if so can we
-    // skip this step?
-    let uri = aMessageHeader.folder.getUriForMsg(aMessageHeader);
-    messenger.messageServiceFromURI(uri)
-      .streamMessage(uri, listener, null, null, false, "");
-    let folder = aMessageHeader.folder;
-    return folder.getMsgTextFromStream(listener.inputStream,
-                                       aMessageHeader.Charset,
+function getMessageBody(msgUri) {
+  let msgURI = Services.io.newURI(msgUri, null, null);
+  let messenger = Cc["@mozilla.org/messenger;1"].createInstance(Ci.nsIMessenger);
+  // Get the message database header for the given message uri:
+  let aMessageHeader = messenger.msgHdrFromURI(msgUri);
+  
+  let listener = Cc["@mozilla.org/network/sync-stream-listener;1"]
+    .createInstance(Ci.nsISyncStreamListener);
+  
+  // does this give us back the original msgUri and if so can we
+  // skip this step?
+  let uri = aMessageHeader.folder.getUriForMsg(aMessageHeader);
+  messenger.messageServiceFromURI(uri)
+    .streamMessage(uri, listener, null, null, false, "");
+  let folder = aMessageHeader.folder;
+  return folder.getMsgTextFromStream(listener.inputStream,
+                                     aMessageHeader.Charset,
                                      65536,
                                      32768,
                                      false,
                                      true,
                                      { });
-  }
+}
 
 
 function addTreeProp(props, value) {
@@ -45,8 +44,8 @@ function addTreeProp(props, value) {
 function Convo(convoId) {
   this.id = convoId;
   /*this.lastMsgDate = null;
-  this.lastSenderIsMe = false;
-  this.pendingDraft = false;*/
+  this.pendingDraft = false;
+  this._lastSenderIsMe = false;*/
   this._hasUnread = false;
   this._needsReplyFlag = true;
   
@@ -71,19 +70,33 @@ function Convo(convoId) {
   this.msgColls = [];
 }
 Convo.prototype = {
-  addMsg: function(msgColl) {
+  addMsg: function(msgColl, isNew) {
     // assert msgColl.conversationID === this.id ?
+    
+    if (isNew) {
+      let lastDate = this.getLastMsgDate();
+      if (lastDate == 0 || msgColl.date > lastDate) {
+        /* is this new and is it newer than anything else in convo?
+         * If it's an outgoing message from me, default is that
+         * convo no longer needs reply. If it's an incoming message
+         * from someone else, assume it does need reply. */
+        if (msgColl.from.value == LovebirdModule.myEmail) {
+          this.markNeedsReply(false);
+        } else {
+          this.markNeedsReply(true);
+        }
+      }
+      /* TODO we might miss some this way -- is it better to
+       * timestamp whenever user manually sets flag, and compare
+       * date of incoming message to last time user set flag? */
+    }
+
     this.msgColls.unshift(msgColl);
 
-    // TODO sort these somewhere
+    // TODO sort these somewhere?
 
-    /*if (msgColl.date > this.lastMsgDate) {
-      // newest message...
-      // set lastSenderIsMe to whether or not I sent this one
-      // if it's a draft, set this.pendingDraft TODO How to know if it's draft?
-      // if it's incoming and unread, set needsReplyFlag to true?
-      // if it's outgoing, set needsReplyFlag to false
-    }*/
+    // if it's a draft, set this.pendingDraft.
+    // TODO How to know if it's draft?
 
     if (!msgColl.read) {
       this._hasUnread = true;
@@ -119,17 +132,17 @@ Convo.prototype = {
 
   needsReply: function() {
     return this._needsReplyFlag;
-    /*if (this.getStatus() == "sent") {
-      return false;
-    } else {
-    }*/
   },
 
-  getStatus: function() {
+  lastMsgIsFromMe: function() {
     // return values match css class names for rows
     // TODO in the future maybe myEmail can have more than
     // one email - it's sent if it's from any of them.
-    if (this.msgColls[0].from.value == LovebirdModule.myEmail) {
+    return (this.msgColls[0].from.value == LovebirdModule.myEmail);
+  },
+
+  getStatus: function() {
+    if (this.lastMsgIsFromMe()) {
       return "sent";
     } else {
       return "unanswered";
@@ -137,7 +150,11 @@ Convo.prototype = {
   },
 
   getLastMsgDate: function() {
-    return this.msgColls[0].date;
+    if (this.msgColls.length > 0) {
+      return this.msgColls[0].date;
+    } else {
+      return 0;
+    }
   },
   
   getSubject: function() {
@@ -163,14 +180,14 @@ function Peep(identity) {
   this._sortedConvos = [];
 }
 Peep.prototype = {
-  addMessage: function(msgColl) {
+  addMessage: function(msgColl, isNew) {
     // Use the conversation ID to figure out which conversation
     // this message belongs in:
     var convId = msgColl.conversationID;
     if (!this.conversations[convId]) {
       this.conversations[convId] = new Convo(convId);
     }
-    this.conversations[convId].addMsg(msgColl);
+    this.conversations[convId].addMsg(msgColl, isNew);
     this._convosAreSorted = false;
   },
 
@@ -433,7 +450,8 @@ var LovebirdModule = function() {
       // handle sorting them.
       peep.clearHistory();
       for (var i =0; i < collection.items.length; i++) {
-        peep.addMessage(collection.items[i]);
+        // false means this is a db-retrieved message, not a new one
+        peep.addMessage(collection.items[i], false);
       }
 
       // Add person to sorted array used to populate people tree:
@@ -521,7 +539,8 @@ var LovebirdModule = function() {
 
     // prepend new messages onto this person's history!
     for (var i =0; i < newMsgCollection.items.length; i++) {
-      person.addMessage(newMsgCollection.items[i]);
+      // true indicates this is a new message, not seen before
+      person.addMessage(newMsgCollection.items[i], true);
     }
 
     // Person's status may have changed, so find their row in
@@ -530,7 +549,7 @@ var LovebirdModule = function() {
     let rowIndex = m_sortedPeople.indexOf(emailAddr);
     if (rowIndex > -1) {
       let tree = lbTabDocument.getElementById("lb-ppl-tree");
-      tree.treeBoxObject.invalidateRow(modifiedRow);
+      tree.treeBoxObject.invalidateRow(rowIndex);
     }
 
     // TODO maybe re-sort the people list, if change in status of this
@@ -541,7 +560,6 @@ var LovebirdModule = function() {
       // displayed) then recreate that too since it probably has a new
       // msg on top.
       dump("Updated selected person, so relisting email.\n");
-      // TODO this part seems to not be happening, test.
       showEmailForPerson(emailAddr);
       // TODO this will recrete the whole message tree view object.
       // Maybe better to just invalidate the tree? But what if the
