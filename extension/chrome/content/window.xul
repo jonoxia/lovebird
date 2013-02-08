@@ -12,6 +12,20 @@
   <script src="chrome://lovebird/content/overlay.js"
 	  type="application/javascript;version=1.8"/>
 
+  <menupopup id="lb-ppl-ctx-menu"
+             onpopupshowing="Lovebird_NS.adjustContextMenu();">
+    <menuitem labeltemplate="New Mail To $1" default="true"
+              oncommand="Lovebird_NS.ctxMenu('newMsg');"/>
+    <menuitem labeltemplate="Mark All Conversations With $1 Resolved"
+              oncommand="Lovebird_NS.ctxMenu('markResolved');"/>
+    <menuitem labeltemplate="Mark All Conversations With $1 Read"
+              oncommand="Lovebird_NS.ctxMenu('markRead');"/>
+    <menuitem labeltemplate="Merge..."
+              oncommand="Lovebird_NS.ctxMenu('merge');"/>
+    <menuitem labeltemplate="Remove $1 from Luv List"
+              oncommand="Lovebird_NS.ctxMenu('unluv');"/>
+  </menupopup>
+
   <!-- See https://developer.mozilla.org/en-US/docs/XUL/window -->
   <vbox flex="1">
 
@@ -53,7 +67,8 @@
       
       <tree flex="1" id="lb-ppl-tree"
                onselect="Lovebird_NS.personTreeSelect();"
-               ondblclick="Lovebird_NS.personTreeDblClick(event);">
+               ondblclick="Lovebird_NS.personTreeDblClick(event);"
+               context="lb-ppl-ctx-menu">
         <treecols>
           <treecol id="personStatusColumn" label="?" flex="0"/>
           <treecol id="personNameColumn" label="Person" flex="2"/>

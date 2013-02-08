@@ -107,9 +107,55 @@ var Lovebird_NS = function() {
         LovebirdModule.luvPersonByEmail(email);
       }
     },
+
+    adjustContextMenu: function() {
+      let contextMenu = document.getElementById("lb-ppl-ctx-menu");
+
+      // Adjust options based on who is selected:
+      var tree = document.getElementById("lb-ppl-tree");
+      var view = tree.view;
+      var rowIndex = view.selection.currentIndex; //returns -1 if the tree is not focused
+      var name = view.getCellText(rowIndex,
+                                  tree.columns.getColumnAt(1));
+      if (rowIndex != -1) {
+        for (var i = 0; i < contextMenu.childNodes.length; i++) {
+          var menuItem = contextMenu.childNodes[i];
+          var template = menuItem.getAttribute("labeltemplate");
+          menuItem.setAttribute("label",
+                                template.replace("$1", name));
+        }
+      }
+    },
     
     sortBy: function(sortOrder) {
       LovebirdModule.sortPeopleBy(sortOrder);
-    } // end sortBy function
+    },
+
+    ctxMenu: function(commandName) {
+      // Find who was right-clicked;
+      var view = document.getElementById("lb-ppl-tree").view;
+      var rowIndex = view.selection.currentIndex;
+
+      // TODO this assumes that selected person always == rightclicked
+      // person - is that ever not true?
+      switch (commandName) {
+        case "newMsg":
+        dump("TODO implement newMsg.\n");
+        break;
+        case "markResolved":
+        dump("TODO implement markResolved.\n");
+        break;
+        case "markRead":
+        dump("TODO implement markRead.\n");
+        break;
+        case "merge":
+        dump("TODO implement merge.\n");
+        break;
+        case "unluv":
+        dump("TODO implement unluv.\n");
+        break;
+      }
+
+    }
   }; // end public interface object
 }(); // immediately call function to create namespace object
