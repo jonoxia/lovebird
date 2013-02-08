@@ -135,13 +135,13 @@ Convo.prototype = {
   },
 
   lastMsgIsFromMe: function() {
-    // return values match css class names for rows
     // TODO in the future maybe myEmail can have more than
     // one email - it's sent if it's from any of them.
     return (this.msgColls[0].from.value == LovebirdModule.myEmail);
   },
 
   getStatus: function() {
+    // return values match css class names for rows
     if (this.lastMsgIsFromMe()) {
       return "sent";
     } else {
@@ -224,12 +224,22 @@ Peep.prototype = {
     return this.getConversations()[0].getStatus();
   },
 
+  needsReply: function() {
+    return this.getConversations()[0].needsReply();
+  },
+
   getLastMsgDate: function() {
     return this.getConversations()[0].getLastMsgDate();
   },
 
   getConvoById: function(convoId) {
     return this.conversations[convoId];
+  },
+
+  markAllResolved: function() {
+    for (let id in this.conversations) {
+      this.conversations[id].markNeedsReply(false);
+    }
   }
 };
 
@@ -410,7 +420,7 @@ var LovebirdModule = function() {
         addTreeProp(props, "large");
       }
       if (col.id == "personStatusColumn") {
-        if (person.getStatus() == "unanswered") {
+        if (person.needsReply()) {
           addTreeProp(props, "needsReply");
         }
       }
@@ -817,39 +827,40 @@ var LovebirdModule = function() {
     }
   }
 
-  function showEmailForPersonIndex(rowIndex) {
-    if (rowIndex >= 0 && rowIndex < m_sortedPeople.length) {
-      showEmailForPerson(m_sortedPeople[rowIndex]);
-    }
-  }
-  
-  function openNewEmailToPersonIndex(rowIndex) {
-    if (rowIndex >= 0 && rowIndex < m_sortedPeople.length) {
-      openNewMailToAddress(m_sortedPeople[rowIndex]);
-    }
-  }
-
   return {
     openLovebirdTab: openLovebirdTab,
     loadEverybody: loadEverybody,
     luvPerson: luvPerson,
     luvPersonByEmail: luvPersonByEmail,
     luvSenderOfMessage: luvSenderOfMessage,
-    showEmailForPerson: showEmailForPerson, // Maybe not public?
     sortPeopleBy: sortPeopleBy,
     openReplyWindowForThread: openReplyWindowForThread,
     startNewMailListener: startNewMailListener,
-    openNewMailToAddress: openNewMailToAddress, // Maybe not public?
     getHtmlForThread: getHtmlForThread,
     handleStarClick: handleStarClick,
-    showEmailForPersonIndex: showEmailForPersonIndex,
-    openNewEmailToPersonIndex: openNewEmailToPersonIndex,
+    showEmailForPersonIndex: function(rowIndex) {
+      if (rowIndex >= 0 && rowIndex < m_sortedPeople.length) {
+        showEmailForPerson(m_sortedPeople[rowIndex]);
+      }
+    },
+    openNewEmailToPersonIndex: function(rowIndex) {
+      if (rowIndex >= 0 && rowIndex < m_sortedPeople.length) {
+        openNewMailToAddress(m_sortedPeople[rowIndex]);
+      }
+    },
     
     get myEmail() {
       if (!m_myEmail) {
         m_myEmail = MailServices.accounts.defaultAccount.defaultIdentity.email;
       }
       return m_myEmail;
+    },
+
+    markAllResolved: function(rowIndex) {
+      if (rowIndex >= 0 && rowIndex < m_sortedPeople.length) {
+        var email = m_sortedPeople[rowIndex];
+        myPeople[email].markAllResolved();
+      }
     }
   };
 }();

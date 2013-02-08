@@ -127,23 +127,21 @@ var Lovebird_NS = function() {
       }
     },
     
-    sortBy: function(sortOrder) {
-      LovebirdModule.sortPeopleBy(sortOrder);
-    },
-
     ctxMenu: function(commandName) {
       // Find who was right-clicked;
-      var view = document.getElementById("lb-ppl-tree").view;
+      var tree = document.getElementById("lb-ppl-tree");
+      var view = tree.view;
       var rowIndex = view.selection.currentIndex;
 
       // TODO this assumes that selected person always == rightclicked
       // person - is that ever not true?
       switch (commandName) {
         case "newMsg":
-        dump("TODO implement newMsg.\n");
         break;
         case "markResolved":
-        dump("TODO implement markResolved.\n");
+        LovebirdModule.markAllResolved(rowIndex);
+        document.getElementById("lb-msg-tree").treeBoxObject.invalidate();
+        tree.treeBoxObject.invalidateRow(rowIndex);
         break;
         case "markRead":
         dump("TODO implement markRead.\n");
@@ -156,6 +154,10 @@ var Lovebird_NS = function() {
         break;
       }
 
+    },
+
+    sortBy: function(sortOrder) {
+      LovebirdModule.sortPeopleBy(sortOrder);
     }
   }; // end public interface object
 }(); // immediately call function to create namespace object
