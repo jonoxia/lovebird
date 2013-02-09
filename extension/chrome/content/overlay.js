@@ -137,6 +137,7 @@ var Lovebird_NS = function() {
       // person - is that ever not true?
       switch (commandName) {
         case "newMsg":
+        LovebirdModule.openNewEmailToPersonIndex(rowIndex);
         break;
         case "markResolved":
         LovebirdModule.markAllResolved(rowIndex);
