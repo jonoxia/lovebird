@@ -9,18 +9,23 @@ Cu.import("resource:///modules/gloda/public.js");
 Cu.import("resource:///modules/mailServices.js"); // needed for MailServices.compose etc.
 Cu.import("resource://gre/modules/Services.jsm"); // needed for Services.io etc.
 
-function getMessageBody(msgUri) {
-  let msgURI = Services.io.newURI(msgUri, null, null);
+
+function getMsgHdr(msgUri) {
+//  let msgURI = Services.io.newURI(msgUri, null, null);
   let messenger = Cc["@mozilla.org/messenger;1"].createInstance(Ci.nsIMessenger);
   // Get the message database header for the given message uri:
-  let aMessageHeader = messenger.msgHdrFromURI(msgUri);
-  
+  return messenger.msgHdrFromURI(msgUri);
+}
+
+function getMessageBody(msgUri) {
+  let aMessageHeader = getMsgHdr(msgUri);
   let listener = Cc["@mozilla.org/network/sync-stream-listener;1"]
     .createInstance(Ci.nsISyncStreamListener);
   
   // does this give us back the original msgUri and if so can we
   // skip this step?
   let uri = aMessageHeader.folder.getUriForMsg(aMessageHeader);
+  let messenger = Cc["@mozilla.org/messenger;1"].createInstance(Ci.nsIMessenger);
   messenger.messageServiceFromURI(uri)
     .streamMessage(uri, listener, null, null, false, "");
   let folder = aMessageHeader.folder;
@@ -167,6 +172,13 @@ Convo.prototype = {
 
   hasUnread: function() {
     return this._hasUnread;
+  },
+
+  hasDraft: function() {
+    let msgHdr = getMsgHdr(this.getLastMsgUri());
+    // If it's a draft, it will be inside a folder named "Drafts"
+    // future TODO: only in the English version!
+    return (msgHdr.folder.name == "Drafts");
   }
 };
 
@@ -240,6 +252,24 @@ Peep.prototype = {
     for (let id in this.conversations) {
       this.conversations[id].markNeedsReply(false);
     }
+  },
+
+  hasDraft: function() {
+    for (let id in this.conversations) {
+      if (this.conversations[id].hasDraft()) {
+        return true;
+      }
+    }
+    return false;
+  },
+
+  hasUnread: function() {
+    for (let id in this.conversations) {
+      if (this.conversations[id].hasUnread()) {
+        return true;
+      }
+    }
+    return false;
   }
 };
 
@@ -339,11 +369,7 @@ var LovebirdModule = function() {
   }
 
   function openReplyWindow(msgUri) {
-    // make the URI object
-    let msgURI = Services.io.newURI(msgUri, null, null);
-    let messenger = Cc["@mozilla.org/messenger;1"].createInstance(Ci.nsIMessenger);
-    // Get the message database header for the given message uri:
-    let msgDbHdr = messenger.msgHdrFromURI(msgUri);
+    let msgDbHdr = getMsgHdr(msgUri);
 
     // Folder of the message we're replying to gives us clue
     // about identity that should be used to send:
@@ -400,7 +426,17 @@ var LovebirdModule = function() {
       var person = myPeople[email];
       switch (column.id) {
       case "personStatusColumn":
-        return "";
+        statusString = "";
+        if (person.hasUnread()) {
+          statusString += "N";
+        }
+        if (person.hasDraft()) {
+          statusString += "D";
+        }
+        // TODO weird bug here:
+        // If statusString is ND AND has needsReply icon, the
+        // ND doesn't appear. I think it doesn't have room.
+        return statusString;
       case "personNameColumn":
         return person.getName();
       }
@@ -692,6 +728,12 @@ var LovebirdModule = function() {
       getCellText : function(row, column){
         var convo = conversations[row];
         switch (column.id) {
+        case "inOutColumn":
+          let label = "";
+          if (convo.hasDraft()) {
+            label += "D";
+          }
+          return label;
         case "subjectColumn":
           return convo.getSubject();
         case "needsReplyColumn":

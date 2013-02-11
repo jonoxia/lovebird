@@ -70,7 +70,7 @@
                ondblclick="Lovebird_NS.personTreeDblClick(event);"
                context="lb-ppl-ctx-menu">
         <treecols>
-          <treecol id="personStatusColumn" label="?" flex="0"/>
+          <treecol id="personStatusColumn" label="Status" flex="0"/>
           <treecol id="personNameColumn" label="Person" flex="2"/>
         </treecols>
         <treechildren/>
