@@ -32,14 +32,15 @@ var Lovebird_NS = function() {
     },
     
     personTreeSelect: function() {
-      // replaces personListClick
       var view = document.getElementById("lb-ppl-tree").view;
       var rowIndex = view.selection.currentIndex; //returns -1 if the tree is not focused
       LovebirdModule.showEmailForPersonIndex(rowIndex);
+      // clear out conversation text panel:
+      let browser = document.getElementById("lb-msg-body"); 
+      browser.setAttribute("src","data:text/html;");
     },
     
     personTreeDblClick: function(event) {
-      // replaces personListDblClick
       var tree = document.getElementById("lb-msg-tree");
       var tbo = tree.treeBoxObject;
       

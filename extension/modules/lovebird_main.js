@@ -795,7 +795,7 @@ var LovebirdModule = function() {
     case "oldest":
       sortFunction = function(a, b) {
         return a.getLastMsgDate() - b.getLastMsgDate();
-      }
+      };
       break;
     case "unanswered":
       // sort ones where the last message is TO me on top,
@@ -810,7 +810,7 @@ var LovebirdModule = function() {
         } else {
           return a.getLastMsgDate() - b.getLastMsgDate();
         }
-      }
+      };
       break;
     case "alphabetical":
       sortFunction = function(a, b) {
@@ -821,7 +821,19 @@ var LovebirdModule = function() {
         } else {
           return 0;
         }
-      }
+      };
+      break;
+    case "unread":
+      // Sort people who have unread messages on top
+      sortFunction = function(a, b) {
+        if (!a.hasUnread()&& b.hasUnread()) {
+          return 1;
+        } else if (a.hasUnread() && !b.hasUnread()) {
+          return -1;
+        } else {
+          return a.getLastMsgDate() - b.getLastMsgDate();
+        }
+      };
       break;
     }
 

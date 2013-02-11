@@ -48,6 +48,11 @@
                   label="Alphabetical"
                   tooltiptext="Alphabetical by name"
                   oncommand="Lovebird_NS.sortBy('alphabetical');"/>
+         <toolbarbutton id="lb-sortby-unread"
+                  class="toolbarbutton-1"
+                  label="Unread"
+                  tooltiptext="Conversations with unread messages"
+                  oncommand="Lovebird_NS.sortBy('unread');"/>
 
          <toolbaritem>
            <label value="Add an email:"/>
