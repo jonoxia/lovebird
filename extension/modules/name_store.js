@@ -112,6 +112,29 @@ var LovebirdNameStore = {
 	});
 	insStmt.finalize();
     },
+  
+  forgetPeep: function(email) {
+    if (!this._dbConnection) {
+      this._init();
+      // TODO what if init fails?
+    }
+    
+    let deleteSql = "DELETE FROM " + PEOPLE_TABLE
+      + " WHERE email = ?1;";
+    let delStmt = this._dbConnection.createStatement(deleteSql);
+    delStmt.params[0] = email;
+    delStmt.executeAsync({
+      handleResult: function(aResultSet) {
+      },
+      handleError: function(aError) {
+	dump(aError + "\n");
+      },
+      handleCompletion: function(aReason) {
+	dump("database deletion complete.\n");
+      }
+    });
+    delStmt.finalize();
+  },
 
   getConvoStatus: function(convoId, callback) {
     if (!this._dbConnection) {

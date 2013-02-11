@@ -285,6 +285,7 @@ var LovebirdModule = function() {
 
   let lbTabDocument = null;
   let m_lastSelectedPerson = null;
+  let m_lastSortOrder = "unanswered";
   let uiDelayTimer = null;
 
   let m_myEmail = null; // See getter of the public interface object
@@ -433,9 +434,6 @@ var LovebirdModule = function() {
         if (person.hasDraft()) {
           statusString += "D";
         }
-        // TODO weird bug here:
-        // If statusString is ND AND has needsReply icon, the
-        // ND doesn't appear. I think it doesn't have room.
         return statusString;
       case "personNameColumn":
         return person.getName();
@@ -534,6 +532,20 @@ var LovebirdModule = function() {
     } else {
       dump("It's a duplicate.\n");
     }
+  }
+
+  function unLuvPerson(email) {
+    let pplTree = lbTabDocument.getElementById("lb-ppl-tree");
+    LovebirdNameStore.forgetPeep(email);
+    delete myPeople[email];
+    sortPeopleBy(m_lastSortOrder); // just to ensure unluved
+    // person is removed from m_sortedPeople
+
+    // force selection to first (remaining) row of people tree
+    // so we're looking at something valid and not zombie convos
+    pplTree.treeBoxObject.invalidate();
+    pplTree.view.selection.select(0);
+
   }
 
   function luvPersonByEmail(email) {
@@ -778,6 +790,7 @@ var LovebirdModule = function() {
      * the 2nd argument first, returning negative means put
      * the 1st argument first. */ 
     var sortFunction = null;
+    m_lastSortOrder = sortOrder;
     switch(sortOrder) {
     case "oldest":
       sortFunction = function(a, b) {
@@ -856,6 +869,8 @@ var LovebirdModule = function() {
   }
 
   function openReplyWindowForThread(rowIndex) {
+    // TODO: If this conversation has a draft, we should open the
+    // draft instead of starting a new message.
     var convo = getConvoForRow(rowIndex);
     if (convo) {
       openReplyWindow( convo.getLastMsgUri() );
@@ -902,6 +917,12 @@ var LovebirdModule = function() {
       if (rowIndex >= 0 && rowIndex < m_sortedPeople.length) {
         var email = m_sortedPeople[rowIndex];
         myPeople[email].markAllResolved();
+      }
+    },
+
+    unLuvPersonIndex: function(rowIndex) {
+      if (rowIndex >= 0 && rowIndex < m_sortedPeople.length) {
+        unLuvPerson(m_sortedPeople[rowIndex]);
       }
     }
   };

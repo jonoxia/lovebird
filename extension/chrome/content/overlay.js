@@ -151,7 +151,7 @@ var Lovebird_NS = function() {
         dump("TODO implement merge.\n");
         break;
         case "unluv":
-        dump("TODO implement unluv.\n");
+        LovebirdModule.unLuvPersonIndex(rowIndex);
         break;
       }
 
