@@ -798,14 +798,11 @@ var LovebirdModule = function() {
       };
       break;
     case "unanswered":
-      // sort ones where the last message is TO me on top,
-      // where last message is FROM me on the bottom.
+      // sort ones where a message needs reply on top
       sortFunction = function(a, b) {
-        if (a.getStatus() == "sent" && 
-            b.getStatus() == "unanswered") {
+        if (!a.needsReply() && b.needsReply()) {
           return 1;
-        } else if (a.getStatus() == "unanswered" &&
-                   b.getStatus() == "sent") {
+        } else if (a.needsReply() && !b.needsReply()) {
           return -1;
         } else {
           return a.getLastMsgDate() - b.getLastMsgDate();
