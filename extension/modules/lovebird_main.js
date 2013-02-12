@@ -904,6 +904,7 @@ var LovebirdModule = function() {
     startNewMailListener: startNewMailListener,
     getHtmlForThread: getHtmlForThread,
     handleStarClick: handleStarClick,
+    getConvoForRow: getConvoForRow,
     showEmailForPersonIndex: function(rowIndex) {
       if (rowIndex >= 0 && rowIndex < m_sortedPeople.length) {
         showEmailForPerson(m_sortedPeople[rowIndex]);

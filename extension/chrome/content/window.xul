@@ -13,18 +13,33 @@
 	  type="application/javascript;version=1.8"/>
 
   <menupopup id="lb-ppl-ctx-menu"
-             onpopupshowing="Lovebird_NS.adjustContextMenu();">
+             onpopupshowing="Lovebird_NS.adjustPplContextMenu();">
     <menuitem labeltemplate="New Mail To $1" default="true"
-              oncommand="Lovebird_NS.ctxMenu('newMsg');"/>
+              oncommand="Lovebird_NS.pplCtxMenu('newMsg');"/>
     <menuitem labeltemplate="Mark All Conversations With $1 Resolved"
-              oncommand="Lovebird_NS.ctxMenu('markResolved');"/>
+              oncommand="Lovebird_NS.pplCtxMenu('markResolved');"/>
     <menuitem labeltemplate="Mark All Conversations With $1 Read"
-              oncommand="Lovebird_NS.ctxMenu('markRead');"/>
+              oncommand="Lovebird_NS.pplCtxMenu('markRead');"/>
     <menuitem labeltemplate="Merge..."
-              oncommand="Lovebird_NS.ctxMenu('merge');"/>
+              oncommand="Lovebird_NS.pplCtxMenu('merge');"/>
     <menuitem labeltemplate="Remove $1 from Luv List"
-              oncommand="Lovebird_NS.ctxMenu('unluv');"/>
+              oncommand="Lovebird_NS.pplCtxMenu('unluv');"/>
   </menupopup>
+
+  <menupopup id="lb-msg-ctx-menu"
+             onpopupshowing="Lovebird_NS.adjustMsgContextMenu();">
+    <menuitem label="Reply To This Conversation" default="true"
+              oncommand="Lovebird_NS.msgCtxMenu('reply');"/>
+    <menuitem label="Hide This Conversation"
+              oncommand="Lovebird_NS.msgCtxMenu('hideConvo');"/>
+    <menuitem label="View Conversation In New Tab"
+              oncommand="Lovebird_NS.msgCtxMenu('newTab');"/>
+    <menuitem id="lb-toggle-needs-reply" label=""
+              oncommand="Lovebird_NS.msgCtxMenu('toggleNeedsReply');"/>
+    <menuitem id="lb-toggle-unread" label=""
+              oncommand="Lovebird_NS.msgCtxMenu('toggleRead');"/>
+  </menupopup>
+  
 
   <!-- See https://developer.mozilla.org/en-US/docs/XUL/window -->
   <vbox flex="1">
@@ -86,7 +101,8 @@
         <tree flex="1" id="lb-msg-tree"
               onselect="Lovebird_NS.msgTreeSelect();"
               onclick="Lovebird_NS.msgTreeClick(event);"
-              ondblclick="Lovebird_NS.msgTreeDblClick(event);">
+              ondblclick="Lovebird_NS.msgTreeDblClick(event);"
+              context="lb-msg-ctx-menu">
           <treecols>
             <treecol id="inOutColumn" label="In/Out" flex="0"/>
             <treecol id="subjectColumn" label="Subject" flex="2"/>

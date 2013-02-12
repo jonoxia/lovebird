@@ -109,7 +109,7 @@ var Lovebird_NS = function() {
       }
     },
 
-    adjustContextMenu: function() {
+    adjustPplContextMenu: function() {
       let contextMenu = document.getElementById("lb-ppl-ctx-menu");
 
       // Adjust options based on who is selected:
@@ -127,8 +127,26 @@ var Lovebird_NS = function() {
         }
       }
     },
+
+    adjustMsgContextMenu: function() {
+      // adjust names of menu items depending on whether selected
+      // item is needs-reply or unread/read.
+      let contextMenu = document.getElementById("lb-msg-ctx-menu");
+      let treeView = document.getElementById("lb-msg-tree").view;
+      let rowIndex = treeView.selection.currentIndex;
+      let convo = LovebirdModule.getConvoForRow(rowIndex);
+
+      let hasUnread = convo.hasUnread();
+      let needsReply = convo.needsReply();
+      let needsReplyItem = document.getElementById("lb-toggle-needs-reply");
+      let unreadItem = document.getElementById("lb-toggle-unread");
+  
+      // TODO this will be a pain come i18n time
+      needsReplyItem.setAttribute("label", needsReply?"Mark Resolved":"Mark Needs Reply");
+      unreadItem.setAttribute("label", hasUnread?"Mark Read":"Mark Unread");
+    },
     
-    ctxMenu: function(commandName) {
+    pplCtxMenu: function(commandName) {
       // Find who was right-clicked;
       var tree = document.getElementById("lb-ppl-tree");
       var view = tree.view;
@@ -155,7 +173,31 @@ var Lovebird_NS = function() {
         LovebirdModule.unLuvPersonIndex(rowIndex);
         break;
       }
+    },
+    
+    msgCtxMenu: function(commandName) {
+      var tree = document.getElementById("lb-ppl-tree");
+      var view = tree.view;
+      var rowIndex = view.selection.currentIndex;
 
+      // TODO same thing, assumes, selected msg is rightclicked msg
+      switch (commandName) {
+        case "reply":
+        dump("TODO call reply\n");
+        break;
+        case "hideConvo":
+        dump("TODO implement hideConvo\n");
+        break;
+        case "newTab":
+        dump("TODO implement view in new tab\n");
+        break;
+        case "toggleNeedsReply":
+        dump("TODO call toggle needs reply\n");
+        break;
+        case "toggleRead":
+        dump("TODO implement toggle unread\n");
+        break;
+      }
     },
 
     sortBy: function(sortOrder) {
