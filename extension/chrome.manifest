@@ -1,3 +1,4 @@
 content     lovebird    chrome/content/
+skin        lovebird    classic/1.0 skin/
 resource    lovebird    ./
 overlay chrome://messenger/content/messenger.xul chrome://lovebird/content/overlay.xul

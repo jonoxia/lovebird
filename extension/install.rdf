@@ -20,8 +20,9 @@
     <!-- Front End MetaData -->
     <em:name>Lovebird</em:name>
     <em:description>Email organized around the people you care about.</em:description>
-    <em:creator>Mozilla Corporation</em:creator>
-    <em:homepageURL>http://testpilot.mozillalabs.com/</em:homepageURL>
-    <em:iconURL>chrome://testpilot/skin/testpilot_32x32.png</em:iconURL>
+    <em:creator>Jono Xia</em:creator>
+    <em:homepageURL>http://studioxia.com/lovebird</em:homepageURL>
+    <em:iconURL>chrome://lovebird/skin/icon48.png</em:iconURL>
+    <em:icon64URL>chrome://lovebird/skin/icon64.png</em:icon64URL>
   </Description>
 </RDF>
