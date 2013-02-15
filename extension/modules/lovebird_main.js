@@ -120,6 +120,12 @@ Convo.prototype = {
   },
 
   markRead: function(newVal) {
+    // See https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIMsgDatabase#MarkRead%28%29
+    /* And
+    * https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIMsgDBHdr#markRead.28.29
+    * "It is also mandatory to set msgHdr.folder.msgDatabase = null
+    * after performing this kind of operations to prevent leaking."
+    */
     if (newVal == true) {
       this._hasUnread = false;
       // Mark all unread messages in this thread read
@@ -129,6 +135,7 @@ Convo.prototype = {
           var uri = msgColl.folderMessageURI;
           let hdr = getMsgHdr(uri);
           hdr.folder.msgDatabase.MarkHdrRead(hdr, true, null);
+          hdr.folder.msgDatabase = null;
         }
       }
     } else {
@@ -141,6 +148,7 @@ Convo.prototype = {
             var uri = msgColl.folderMessageURI;
             let hdr = getMsgHdr(uri);
             hdr.folder.msgDatabase.MarkHdrRead(hdr, false, null);
+            hdr.folder.msgDatabase = null;
             break;
           }
         }
@@ -547,6 +555,52 @@ var LovebirdModule = function() {
     }
   };
 
+  var newMailListener = {
+    msgAdded: function(aMsgHdr) {
+      // This detects new mail sent as well as received.
+      // Here's all the stuff we can read straight off a nsIMsgDBHdr
+      // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIMsgDBHdr
+      
+      // Find all the people involved in the message
+      let peopleInvolved = [];
+      peopleInvolved.push( cleanEmailAddr( aMsgHdr.author ));
+      let recipients = aMsgHdr.recipients.split(",");
+      for (var i = 0; i < recipients.length; i++) {
+        let anotherAddr = cleanEmailAddr( recipients[i] );
+        dump("Adding: " + anotherAddr + "\n");
+        peopleInvolved.push( anotherAddr);
+      }
+      dump("People involved in this email: " + peopleInvolved + "\n");
+      
+      // Wait a second before querying the database. Otherwise, the
+      // brand-new message won't appear in our query results.
+      dump("Setting timer.\n");
+      uiDelayTimer = Cc["@mozilla.org/timer;1"]
+        .createInstance(Ci.nsITimer);
+      uiDelayTimer.initWithCallback({
+        notify: function() {
+          dump("Timer resolves. Querying Gloda:\n");
+          // query the database for the collection corresponding to
+          // this message header:
+          Gloda.getMessageCollectionForHeader(aMsgHdr, {
+            onItemsAdded: function(aItems, aCollection) {},
+            onItemsModified: function(aItems, aCollection) {},
+            onItemsRemoved: function(aItems, aCollection) {},
+            onQueryCompleted: function _onCompleted(id_coll) {
+              dump("Gloda query completed.\n");
+              // Update the UI for any of those people that I luv
+              for (i = 0; i < peopleInvolved.length; i++) {
+                if (myPeople[peopleInvolved[i]] != undefined) {
+                  updateUIForPerson(peopleInvolved[i], id_coll);
+                }
+              }
+            }
+          });
+        }
+      }, 1500, Ci.nsITimer.TYPE_ONE_SHOT);
+    }
+  };
+
   function loadDataForPerson(identity) {
     let email = identity.value;
     if (!myPeople[email]) {
@@ -677,52 +731,6 @@ var LovebirdModule = function() {
 
   function startNewMailListener() {
     // from https://developer.mozilla.org/en-US/docs/Extensions/Thunderbird/HowTos/Common_Thunderbird_Use_Cases/Open_Folder#Watch_for_New_Mail
-
-    var newMailListener = {
-      msgAdded: function(aMsgHdr) {
-        // This detects new mail sent as well as received.
-        // Here's all the stuff we can read straight off a nsIMsgDBHdr
-        // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIMsgDBHdr
-
-        // Find all the people involved in the message
-        let peopleInvolved = [];
-        peopleInvolved.push( cleanEmailAddr( aMsgHdr.author ));
-        let recipients = aMsgHdr.recipients.split(",");
-        for (var i = 0; i < recipients.length; i++) {
-          let anotherAddr = cleanEmailAddr( recipients[i] );
-          dump("Adding: " + anotherAddr + "\n");
-          peopleInvolved.push( anotherAddr);
-        }
-        dump("People involved in this email: " + peopleInvolved + "\n");
-
-        // Wait a second before querying the database. Otherwise, the
-        // brand-new message won't appear in our query results.
-        dump("Setting timer.\n");
-        uiDelayTimer = Cc["@mozilla.org/timer;1"]
-            .createInstance(Ci.nsITimer);
-        uiDelayTimer.initWithCallback({
-          notify: function() {
-            dump("Timer resolves. Querying Gloda:\n");
-            // query the database for the collection corresponding to
-            // this message header:
-            Gloda.getMessageCollectionForHeader(aMsgHdr, {
-              onItemsAdded: function(aItems, aCollection) {},
-              onItemsModified: function(aItems, aCollection) {},
-              onItemsRemoved: function(aItems, aCollection) {},
-              onQueryCompleted: function _onCompleted(id_coll) {
-                dump("Gloda query completed.\n");
-                // Update the UI for any of those people that I luv
-                for (i = 0; i < peopleInvolved.length; i++) {
-                  if (myPeople[peopleInvolved[i]] != undefined) {
-                    updateUIForPerson(peopleInvolved[i], id_coll);
-                  }
-                }
-              }
-            });
-          }
-        }, 1500, Ci.nsITimer.TYPE_ONE_SHOT);
-      }
-    };
     // Add our listener:
     var notfnSvc =
       Cc["@mozilla.org/messenger/msgnotificationservice;1"]
@@ -767,6 +775,20 @@ var LovebirdModule = function() {
 	} // end onQueryCompleted
       }); // end getCollection
     }); // end getPeeps
+  }
+
+  function shutItDown() {
+    m_sortedPeople = [];
+    myPeople = {}; // TODO anything further we need to do to avoid
+    // memory leaks here?
+    lbTabDocument = null;
+    m_lastSelectedPerson = null;
+
+    // Unregister listener:
+    var notfnSvc =
+      Cc["@mozilla.org/messenger/msgnotificationservice;1"]
+      .getService(Ci.nsIMsgFolderNotificationService);
+    notfnSvc.removeListener(newMailListener);
   }
 
   // New one using tree:
@@ -945,6 +967,7 @@ var LovebirdModule = function() {
     getHtmlForThread: getHtmlForThread,
     handleStarClick: handleStarClick,
     getConvoForRow: getConvoForRow,
+    shutItDown: shutItDown,
     showEmailForPersonIndex: function(rowIndex) {
       if (rowIndex >= 0 && rowIndex < m_sortedPeople.length) {
         showEmailForPerson(m_sortedPeople[rowIndex]);

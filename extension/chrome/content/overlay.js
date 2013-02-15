@@ -19,8 +19,7 @@ var Lovebird_NS = function() {
     }, // end onLoad
     
     onUnload: function() {
-      // TODO unregister listener and set lbTabDocument
-      // back to null?
+      LovebirdModule.shutItDown();
     },
     
     contextClick: function(event) {
