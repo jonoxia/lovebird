@@ -120,8 +120,32 @@ Convo.prototype = {
   },
 
   markRead: function(newVal) {
-    this._hasUnread = newVal;
-    // also mark the unread message itself read?
+    if (newVal == true) {
+      this._hasUnread = false;
+      // Mark all unread messages in this thread read
+      for (var i = 0; i < this.msgColls.length; i++) {
+        let msgColl = this.msgColls[i];
+        if (!msgColl.read) {
+          var uri = msgColl.folderMessageURI;
+          let hdr = getMsgHdr(uri);
+          hdr.folder.msgDatabase.MarkHdrRead(hdr, true, null);
+        }
+      }
+    } else {
+      this._hasUnread = true;
+      // Mark latest not-from-me message in this thread unread
+      for (var i = 0; i < this.msgColls.length; i++) {
+        let msgColl = this.msgColls[i];
+        if (msgColl.read) {
+          if (msgColl.from.value != LovebirdModule.myEmail) {
+            var uri = msgColl.folderMessageURI;
+            let hdr = getMsgHdr(uri);
+            hdr.folder.msgDatabase.MarkHdrRead(hdr, false, null);
+            break;
+          }
+        }
+      }
+    }
   },
   
   markNeedsReply: function(newVal) {
@@ -135,6 +159,14 @@ Convo.prototype = {
     this.markNeedsReply( !this._needsReplyFlag );
   },
 
+  toggleUnread: function() {
+    if (this._hasUnread) {
+      this.markRead(true);
+    } else {
+      this.markRead(false);
+    }
+  },
+
   needsReply: function() {
     return this._needsReplyFlag;
   },
@@ -146,6 +178,8 @@ Convo.prototype = {
   },
 
   getStatus: function() {
+    // TODO probably superseded - replace this with a direct
+    // call to lastMsgIsFromMe.
     // return values match css class names for rows
     if (this.lastMsgIsFromMe()) {
       return "sent";
@@ -251,6 +285,12 @@ Peep.prototype = {
   markAllResolved: function() {
     for (let id in this.conversations) {
       this.conversations[id].markNeedsReply(false);
+    }
+  },
+
+  markAllRead: function() {
+    for (let id in this.conversations) {
+      this.conversations[id].markRead(true);
     }
   },
 
@@ -933,6 +973,20 @@ var LovebirdModule = function() {
     unLuvPersonIndex: function(rowIndex) {
       if (rowIndex >= 0 && rowIndex < m_sortedPeople.length) {
         unLuvPerson(m_sortedPeople[rowIndex]);
+      }
+    },
+
+    markAllRead: function(rowIndex) {
+      if (rowIndex >= 0 && rowIndex < m_sortedPeople.length) {
+        var email = m_sortedPeople[rowIndex];
+        myPeople[email].markAllRead();
+      }
+    },
+
+    toggleOneRead: function(rowIndex) {
+      var convo = getConvoForRow(rowIndex);
+      if (convo) {
+        convo.toggleUnread();
       }
     }
   };

@@ -74,8 +74,10 @@ var Lovebird_NS = function() {
       // get the row, col and child element at the point
       var row = { }, col = { }, child = { };
       tbo.getCellAt(event.clientX, event.clientY, row, col, child);
-      if (col.value.id == "needsReplyColumn") {
-        LovebirdModule.handleStarClick(row.value);
+      if (col.value) {
+        if (col.value.id == "needsReplyColumn") {
+          LovebirdModule.handleStarClick(row.value);
+        }
       }
     },
 
@@ -145,6 +147,13 @@ var Lovebird_NS = function() {
       needsReplyItem.setAttribute("label", needsReply?"Mark Resolved":"Mark Needs Reply");
       unreadItem.setAttribute("label", hasUnread?"Mark Read":"Mark Unread");
     },
+
+    refreshSelectedPerson: function() {
+      var tree = document.getElementById("lb-ppl-tree");
+      var view = tree.view;
+      var rowIndex = view.selection.currentIndex;
+      tree.treeBoxObject.invalidateRow(rowIndex);
+    },
     
     pplCtxMenu: function(commandName) {
       // Find who was right-clicked;
@@ -164,7 +173,9 @@ var Lovebird_NS = function() {
         tree.treeBoxObject.invalidateRow(rowIndex);
         break;
         case "markRead":
-        dump("TODO implement markRead.\n");
+        LovebirdModule.markAllRead(rowIndex);
+        document.getElementById("lb-msg-tree").treeBoxObject.invalidate();
+        tree.treeBoxObject.invalidateRow(rowIndex);
         break;
         case "merge":
         dump("TODO implement merge.\n");
@@ -176,14 +187,14 @@ var Lovebird_NS = function() {
     },
     
     msgCtxMenu: function(commandName) {
-      var tree = document.getElementById("lb-ppl-tree");
+      var tree = document.getElementById("lb-msg-tree");
       var view = tree.view;
       var rowIndex = view.selection.currentIndex;
 
       // TODO same thing, assumes, selected msg is rightclicked msg
       switch (commandName) {
         case "reply":
-        dump("TODO call reply\n");
+        LovebirdModule.openReplyWindowForThread(rowIndex);
         break;
         case "hideConvo":
         dump("TODO implement hideConvo\n");
@@ -192,10 +203,14 @@ var Lovebird_NS = function() {
         dump("TODO implement view in new tab\n");
         break;
         case "toggleNeedsReply":
-        dump("TODO call toggle needs reply\n");
+        LovebirdModule.handleStarClick(rowIndex);
+        tree.treeBoxObject.invalidateRow(rowIndex);
+        this.refreshSelectedPerson();
         break;
         case "toggleRead":
-        dump("TODO implement toggle unread\n");
+        LovebirdModule.toggleOneRead(rowIndex);
+        tree.treeBoxObject.invalidateRow(rowIndex);
+        this.refreshSelectedPerson();
         break;
       }
     },
