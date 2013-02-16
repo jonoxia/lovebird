@@ -98,13 +98,13 @@ Convo.prototype = {
 
     this.msgColls.unshift(msgColl);
 
-    // TODO sort these somewhere?
-
-    // if it's a draft, set this.pendingDraft.
-    // TODO How to know if it's draft?
-
+    // TODO sort these somewhere? 
+   
     if (!msgColl.read) {
-      this._hasUnread = true;
+      // Don't care about unread messages from myself:
+      if (msgColl.from.value != LovebirdModule.myEmail) {
+        this._hasUnread = true;
+      }
     }
   },
   
@@ -493,7 +493,7 @@ var LovebirdModule = function() {
     isSorted: function(){ return false; },
     getLevel: function(row){ return 0; },
     getImageSrc: function(row,col){ return null; },
-    getRowProperties: function(row,props){},
+    getRowProperties: function(row, props){},
     getCellProperties: function(row,col,props){
       if (row >= m_sortedPeople.length) { return; }
       var email = m_sortedPeople[row];
