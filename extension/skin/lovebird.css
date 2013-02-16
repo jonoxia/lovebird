@@ -1,7 +1,10 @@
 treechildren::-moz-tree-cell-text(large)
 {
     font-size: 14pt;
-    /* TODO make line height taller */
+}
+
+#lb-add-person-label {
+  vertical-align: middle;
 }
 
 #lb-add-person {

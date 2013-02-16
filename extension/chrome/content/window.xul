@@ -50,28 +50,39 @@ type="text/css"?>
              fullscreentoolbar="true"
              mode="full">
          <toolbarbutton id="lb-sortby-oldest"
+                  type="radio"
+                  group="SortMethodRadioGroup"
                   class="toolbarbutton-1"
                   label="Oldest"
                   tooltiptext="Conversations that have gone longest without any message"
                   oncommand="Lovebird_NS.sortBy('oldest');"/>
          <toolbarbutton id="lb-sortby-unanswered"
+                  type="radio"
+                  group="SortMethodRadioGroup"
                   class="toolbarbutton-1"
                   label="Unanswered"
                   tooltiptext="Conversations that have gone longest without an answer from you"
                   oncommand="Lovebird_NS.sortBy('unanswered');"/>
          <toolbarbutton id="lb-sortby-alphabetical"
+                  type="radio"
+                  group="SortMethodRadioGroup"
                   class="toolbarbutton-1"
                   label="Alphabetical"
                   tooltiptext="Alphabetical by name"
                   oncommand="Lovebird_NS.sortBy('alphabetical');"/>
          <toolbarbutton id="lb-sortby-unread"
+                  type="radio"
+                  group="SortMethodRadioGroup"
                   class="toolbarbutton-1"
                   label="Unread"
                   tooltiptext="Conversations with unread messages"
                   oncommand="Lovebird_NS.sortBy('unread');"/>
 
-         <toolbaritem>
-           <label value="Add an email:"/>
+         <toolbarseparator/>
+         <toolbaritem style="align: center">
+           <vbox pack="center">
+             <label id="lb-add-person-label" value="Add an email:"/>
+           </vbox>
            <textbox id="lb-email-entry"
                     type="autocomplete"
                     autocompletesearch="mydomain addrbook"/>
@@ -89,7 +100,8 @@ type="text/css"?>
       <tree flex="1" id="lb-ppl-tree"
                onselect="Lovebird_NS.personTreeSelect();"
                ondblclick="Lovebird_NS.personTreeDblClick(event);"
-               context="lb-ppl-ctx-menu">
+               context="lb-ppl-ctx-menu"
+               hidecolumnpicker="true">
         <treecols>
           <treecol id="personStatusColumn" label="Status" flex="0"/>
           <treecol id="personNameColumn" label="Person" flex="2"/>
@@ -103,7 +115,8 @@ type="text/css"?>
               onselect="Lovebird_NS.msgTreeSelect();"
               onclick="Lovebird_NS.msgTreeClick(event);"
               ondblclick="Lovebird_NS.msgTreeDblClick(event);"
-              context="lb-msg-ctx-menu">
+              context="lb-msg-ctx-menu"
+              hidecolumnpicker="true">
           <treecols>
             <treecol id="inOutColumn" label="In/Out" flex="0"/>
             <treecol id="subjectColumn" label="Subject" flex="2"/>
