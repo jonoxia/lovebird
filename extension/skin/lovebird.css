@@ -3,6 +3,10 @@ treechildren::-moz-tree-cell-text(large)
     font-size: 14pt;
 }
 
+treechildren::-moz-tree-row(large) {
+    height: 30px;
+}
+
 #lb-add-person-label {
   vertical-align: middle;
 }
@@ -36,4 +40,17 @@ treechildren::-moz-tree-image(incoming)
 treechildren::-moz-tree-image(outgoing)
 {
   list-style-image: url("outgoing.png");
+}
+
+#lb-thread-title {
+  font-size: large;
+  text-align: center;
+  font-weight: bold;
+  margin: 1em;
+}
+
+#lb-thread-view {
+  border-style: solid;
+  border-width: 1px;
+  border-color: grey;
 }

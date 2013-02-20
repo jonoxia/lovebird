@@ -111,7 +111,7 @@ type="text/css"?>
 
       <vbox flex="3">
 
-        <tree flex="2" id="lb-msg-tree"
+        <tree flex="1" id="lb-msg-tree"
               onselect="Lovebird_NS.msgTreeSelect();"
               onclick="Lovebird_NS.msgTreeClick(event);"
               ondblclick="Lovebird_NS.msgTreeDblClick(event);"
@@ -128,9 +128,10 @@ type="text/css"?>
         </tree>
         <!-- following after browser id="messagepane" in 
         http://mxr.mozilla.org/comm-central/source/mail/base/content/messenger.xul -->
+        <label flex="0" id="lb-thread-title"/>
         <browser id="lb-thread-view"
                  contextmenu="pageContextMenu"
-                 flex="3" name="multimessage"
+                 flex="2" name="multimessage"
                  disablesecurity="true" disablehistory="true"
                  tooltip="aHTMLTooltip"
                  src="chrome://lovebird/content/viewer.xhtml"

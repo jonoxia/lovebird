@@ -61,14 +61,18 @@ var Lovebird_NS = function() {
          * then add a div for each message in the conversation. */
         let browserPane = document.getElementById("lb-thread-view");
         let innerDoc = browserPane.contentDocument;
-        let heading = innerDoc.getElementById('heading');
         let msgList = innerDoc.getElementById('messagelist');
         let nuggets = LovebirdModule.getThreadContents(rowIndex);
+/*        let heading = innerDoc.getElementById('heading');
         heading.innerHTML = "";
-        heading.appendChild(innerDoc.createTextNode(nuggets[0].subject));
+        heading.appendChild(innerDoc.createTextNode(nuggets[0].subject));*/
+        let threadTitle = document.getElementById("lb-thread-title");
+        threadTitle.setAttribute("value", nuggets[0].subject);
         msgList.innerHTML = "";
-        for (var i = 0; i < nuggets.length; i++) {
-          let newDiv = innerDoc.createElement("div");
+        let newDiv;
+        for (var i = nuggets.length -1; i >= 0; i--) {
+          // Loop is backwards so newest will be on bottom
+          newDiv = innerDoc.createElement("div");
           let divHdr = innerDoc.createElement("h2");
           if (nuggets[i].from == LovebirdModule.myEmail) {
             newDiv.setAttribute("class", "lb-msg from-me");
@@ -85,6 +89,8 @@ var Lovebird_NS = function() {
           }
           msgList.appendChild(newDiv);
         }
+        // Experiment: scroll last one into view:
+        newDiv.scrollIntoView(true);
       }
     },
 
