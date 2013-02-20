@@ -21,8 +21,6 @@ type="text/css"?>
               oncommand="Lovebird_NS.pplCtxMenu('markResolved');"/>
     <menuitem labeltemplate="Mark All Conversations With $1 Read"
               oncommand="Lovebird_NS.pplCtxMenu('markRead');"/>
-    <menuitem labeltemplate="Merge..."
-              oncommand="Lovebird_NS.pplCtxMenu('merge');"/>
     <menuitem labeltemplate="Remove $1 from Luv List"
               oncommand="Lovebird_NS.pplCtxMenu('unluv');"/>
   </menupopup>
@@ -31,8 +29,6 @@ type="text/css"?>
              onpopupshowing="Lovebird_NS.adjustMsgContextMenu();">
     <menuitem label="Reply To This Conversation" default="true"
               oncommand="Lovebird_NS.msgCtxMenu('reply');"/>
-    <menuitem label="Hide This Conversation"
-              oncommand="Lovebird_NS.msgCtxMenu('hideConvo');"/>
     <menuitem label="View Conversation In New Tab"
               oncommand="Lovebird_NS.msgCtxMenu('newTab');"/>
     <menuitem id="lb-toggle-needs-reply" label=""

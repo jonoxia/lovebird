@@ -201,8 +201,6 @@ var Lovebird_NS = function() {
         document.getElementById("lb-msg-tree").treeBoxObject.invalidate();
         tree.treeBoxObject.invalidateRow(rowIndex);
         break;
-        case "merge":
-        dump("TODO implement merge.\n");
         break;
         case "unluv":
         LovebirdModule.unLuvPersonIndex(rowIndex);
@@ -220,8 +218,6 @@ var Lovebird_NS = function() {
         case "reply":
         LovebirdModule.openReplyWindowForThread(rowIndex);
         break;
-        case "hideConvo":
-        dump("TODO implement hideConvo\n");
         break;
         case "newTab":
         LovebirdModule.openThreadNewTab(rowIndex);
