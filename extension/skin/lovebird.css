@@ -42,6 +42,11 @@ treechildren::-moz-tree-image(outgoing)
   list-style-image: url("outgoing.png");
 }
 
+treechildren::-moz-tree-image(draft)
+{
+  list-style-image: url("draft.png");
+}
+
 #lb-thread-title {
   font-size: large;
   text-align: center;

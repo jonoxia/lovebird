@@ -71,13 +71,20 @@ var Lovebird_NS = function() {
           // Loop is backwards so newest will be on bottom
           newDiv = innerDoc.createElement("div");
           let divHdr = innerDoc.createElement("h2");
+          let headerTxt = "";
           if (nuggets[i].from == LovebirdModule.myEmail) {
             newDiv.setAttribute("class", "lb-msg from-me");
-            divHdr.appendChild(innerDoc.createTextNode("Me  -  " + nuggets[i].date));
+            headerTxt = "Me";
           } else {
             newDiv.setAttribute("class", "lb-msg to-me");
-            divHdr.appendChild(innerDoc.createTextNode(nuggets[i].name + "  -  " + nuggets[i].date));
+            headerTxt = nuggets[i].name;
           }
+          if (nuggets[i].isDraft) {
+            headerTxt += " (Draft - not sent)";
+          } else {
+            headerTxt += "  -  " + nuggets[i].date;
+          }
+          divHdr.appendChild(innerDoc.createTextNode(headerTxt));
           newDiv.appendChild(divHdr);
           let lines = nuggets[i].body.split("\n");
           for (var j = 0; j < lines.length; j++) {

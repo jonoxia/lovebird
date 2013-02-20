@@ -150,7 +150,9 @@ Convo.prototype = {
                     date: niceDateFormat( coll.date ),
                     from: coll.from.value,
                     body: getMessageBody(uri),
-                    name: coll.from.contact.name});
+                    name: coll.from.contact.name,
+                    isDraft: (coll.folder.name == "Drafts")
+                   });
     }
     return nuggets;
   },
@@ -219,17 +221,6 @@ Convo.prototype = {
     // TODO in the future maybe myEmail can have more than
     // one email - it's sent if it's from any of them.
     return (this.msgColls[0].from.value == LovebirdModule.myEmail);
-  },
-
-  getStatus: function() {
-    // TODO probably superseded - replace this with a direct
-    // call to lastMsgIsFromMe.
-    // return values match css class names for rows
-    if (this.lastMsgIsFromMe()) {
-      return "sent";
-    } else {
-      return "unanswered";
-    }
   },
 
   getLastMsgDate: function() {
@@ -326,9 +317,6 @@ Peep.prototype = {
     return this.identity.value;
   },
 
-  getStatus: function() {
-    return this.getConversations()[0].getStatus();
-  },
 
   needsReply: function() {
     return this.getConversations()[0].needsReply();
@@ -504,11 +492,7 @@ var LovebirdModule = function() {
       var person = myPeople[email];
       switch (column.id) {
       case "personStatusColumn":
-        statusString = "";
-        if (person.hasDraft()) {
-          statusString += "D";
-        }
-        return statusString;
+        return "";
       case "personNameColumn":
         return person.getName();
       }
@@ -531,7 +515,10 @@ var LovebirdModule = function() {
         }
       }
       if (col.id == "personStatusColumn") {
-        if (person.needsReply()) {
+        // TODO decide whether draft or needs reply takes precedence
+        if (person.hasDraft()) {
+          addTreeProp(props, "draft");
+        } else if (person.needsReply()) {
           addTreeProp(props, "needsReply");
         }
       }
@@ -832,11 +819,7 @@ var LovebirdModule = function() {
         var convo = conversations[row];
         switch (column.id) {
         case "inOutColumn":
-          let label = "";
-          if (convo.hasDraft()) {
-            label += "D";
-          }
-          return label;
+          return "";
         case "subjectColumn":
           return convo.getSubject();
         case "needsReplyColumn":
@@ -861,7 +844,13 @@ var LovebirdModule = function() {
            * star image based on this property. */
           addTreeProp(props, convo.needsReply()?"needsReply": "doesntNeed");
         } if (col.id == "inOutColumn") {
-          addTreeProp(props, (convo.getStatus() == "sent") ?"outgoing": "incoming");
+          if (convo.hasDraft()) {
+            addTreeProp(props, "draft");
+          } else if (convo.lastMsgIsFromMe()) {
+            addTreeProp(props, "outgoing");
+          } else {
+            addTreeProp(props, "incoming");
+          }
         } else {
           if (convo.hasUnread()) {
             addTreeProp(props, "unread");
