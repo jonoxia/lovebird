@@ -73,9 +73,9 @@ function niceDateFormat(date) {
   var hours = date.getHours();
   var minutes = date.getMinutes();
   if (minutes < 10) {
-    return hours + ":0" + minutes;
+    return "Today at " + hours + ":0" + minutes;
   }
-  return hours + ":" + minutes;
+  return "Today at " + hours + ":" + minutes;
 }
 
 
@@ -479,9 +479,6 @@ var LovebirdModule = function() {
       switch (column.id) {
       case "personStatusColumn":
         statusString = "";
-        if (person.hasUnread()) {
-          statusString += "N";
-        }
         if (person.hasDraft()) {
           statusString += "D";
         }
@@ -503,6 +500,9 @@ var LovebirdModule = function() {
       var person = myPeople[email];
       if (col.id == "personNameColumn") {
         addTreeProp(props, "large");
+        if (person.hasUnread()) {
+          addTreeProp(props, "unread");
+        }
       }
       if (col.id == "personStatusColumn") {
         if (person.needsReply()) {
