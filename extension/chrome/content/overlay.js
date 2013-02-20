@@ -108,6 +108,7 @@ var Lovebird_NS = function() {
       if (col.value) {
         if (col.value.id == "needsReplyColumn") {
           LovebirdModule.handleStarClick(row.value);
+          this.refreshSelectedPerson();
         }
       }
     },

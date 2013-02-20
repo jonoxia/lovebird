@@ -358,6 +358,22 @@ Peep.prototype = {
       }
     }
     return false;
+  },
+
+  topConcern: function() {
+    // returns "draft", "needsReply", or null
+    // if there's both a conversation with a draft and a conversation
+    // that needs a reply, use whichever one is newest.
+    let convos = this.getConversations();
+    for (let i = 0; i < convos.length; i++) {
+      if (convos[i].hasDraft()) {
+        return "draft";
+      }
+      if (convos[i].needsReply()) {
+        return "needsReply";
+      }
+    }
+    return null;
   }
 };
 
@@ -515,10 +531,12 @@ var LovebirdModule = function() {
         }
       }
       if (col.id == "personStatusColumn") {
-        // TODO decide whether draft or needs reply takes precedence
-        if (person.hasDraft()) {
+        // Either draft icon or needs reply icon, whichever takes
+        // precedence
+        let concern = person.topConcern();
+        if (concern == "draft") {
           addTreeProp(props, "draft");
-        } else if (person.needsReply()) {
+        } else if (concern == "needsReply") {
           addTreeProp(props, "needsReply");
         }
       }
