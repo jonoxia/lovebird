@@ -7,6 +7,8 @@ var Lovebird_NS = function() {
 
   Cu.import("resource://lovebird/modules/lovebird_main.js");
 
+  var readItTimer = null;
+
   // Public interface:
   return {
     openTab: function() {
@@ -41,7 +43,7 @@ var Lovebird_NS = function() {
     },
     
     personTreeDblClick: function(event) {
-      var tree = document.getElementById("lb-msg-tree");
+      var tree = document.getElementById("lb-ppl-tree");
       var tbo = tree.treeBoxObject;
       
       // get the row, col and child element at the point
@@ -93,8 +95,13 @@ var Lovebird_NS = function() {
           }
           msgList.appendChild(newDiv);
         }
-        // Experiment: scroll last one into view:
+        // Scroll newest message into view:
         newDiv.scrollIntoView(true);
+
+        // If convo was unread, start timer to mark it read:
+        if (LovebirdModule.getConvoForRow(rowIndex).hasUnread()) {
+          this.countDownToMarkRead(rowIndex);
+        }
       }
     },
 
@@ -245,6 +252,21 @@ var Lovebird_NS = function() {
 
     sortBy: function(sortOrder) {
       LovebirdModule.sortPeopleBy(sortOrder);
+    },
+
+    countDownToMarkRead: function(rowIndex) {
+      // Start "you read this" timer:
+      if (readItTimer != null) {
+        window.clearTimeout(readItTimer);
+      }
+      var self = this;
+      readItTimer = window.setTimeout(function() {
+        let convo = LovebirdModule.getConvoForRow(rowIndex);
+        convo.markRead(true);
+        document.getElementById("lb-msg-tree").treeBoxObject.invalidate();
+        self.refreshSelectedPerson();
+        readItTimer = null;
+      }, 2500);
     }
   }; // end public interface object
 }(); // immediately call function to create namespace object
