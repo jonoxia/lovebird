@@ -63,9 +63,6 @@ var Lovebird_NS = function() {
         let innerDoc = browserPane.contentDocument;
         let msgList = innerDoc.getElementById('messagelist');
         let nuggets = LovebirdModule.getThreadContents(rowIndex);
-/*        let heading = innerDoc.getElementById('heading');
-        heading.innerHTML = "";
-        heading.appendChild(innerDoc.createTextNode(nuggets[0].subject));*/
         let threadTitle = document.getElementById("lb-thread-title");
         threadTitle.setAttribute("value", nuggets[0].subject);
         msgList.innerHTML = "";
@@ -227,7 +224,7 @@ var Lovebird_NS = function() {
         dump("TODO implement hideConvo\n");
         break;
         case "newTab":
-        dump("TODO implement view in new tab\n");
+        LovebirdModule.openThreadNewTab(rowIndex);
         break;
         case "toggleNeedsReply":
         LovebirdModule.handleStarClick(rowIndex);

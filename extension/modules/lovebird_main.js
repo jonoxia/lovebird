@@ -257,6 +257,22 @@ Convo.prototype = {
     // If it's a draft, it will be inside a folder named "Drafts"
     // future TODO: only in the English version!
     return (msgHdr.folder.name == "Drafts");
+  },
+
+  openInNewTab: function() {
+// gConversationOpener.openConversationForMessages(gFolderDisplay.selectedMessages);
+    let tabmail = Cc['@mozilla.org/appshell/window-mediator;1']
+      .getService(Ci.nsIWindowMediator)
+      .getMostRecentWindow("mail:3pane")
+      .document.getElementById("tabmail");
+    let aMessage = this.msgColls[0];
+    // From http://mxr.mozilla.org/comm-central/source/mail/base/content/msgHdrViewOverlay.js  line 2813
+    tabmail.openTab("glodaList", {
+      conversation: aMessage.conversation,
+      message: aMessage,
+      title: aMessage.conversation.subject,
+      background: false
+    });
   }
 };
 
@@ -1023,6 +1039,13 @@ var LovebirdModule = function() {
       var convo = getConvoForRow(rowIndex);
       if (convo) {
         convo.toggleUnread();
+      }
+    },
+
+    openThreadNewTab: function(rowIndex) {
+      var convo = getConvoForRow(rowIndex);
+      if (convo) {
+        convo.openInNewTab();
       }
     }
   };
