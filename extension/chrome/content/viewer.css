@@ -1,0 +1,44 @@
+#heading {
+    text-align: center;
+    font-weight: bold;
+    font-size: 14pt;
+}
+
+#content {
+    background-color: grey;
+}
+
+.lb-msg {
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+  border-color: grey;
+  border-width: 1px;
+  border-style: solid;
+  margin: 5px;
+  width: 90%;
+  background-color: white;
+  box-shadow: 8px 8px 5px #888888;
+  padding: 10px;
+}
+
+.lb-msg h2 {
+    font-size: 14pt;
+    font-weight: bold;
+    margin: 0px 5px 10px 5px;
+}
+
+.from-me {
+  float: right;
+}
+
+.to-me {
+  float: left;
+}
+
+.from-me h2{
+  color: blue;
+}
+
+.to-me h2{
+  color: red;
+}

@@ -34,9 +34,10 @@ var Lovebird_NS = function() {
       var view = document.getElementById("lb-ppl-tree").view;
       var rowIndex = view.selection.currentIndex; //returns -1 if the tree is not focused
       LovebirdModule.showEmailForPersonIndex(rowIndex);
-      // clear out conversation text panel:
-      let browser = document.getElementById("lb-msg-body"); 
-      browser.setAttribute("src","data:text/html;");
+
+      // Show text of most recent conversation with this person:
+      var msgTree = document.getElementById("lb-msg-tree");
+      msgTree.view.selection.select(0);
     },
     
     personTreeDblClick: function(event) {
@@ -51,18 +52,38 @@ var Lovebird_NS = function() {
     },
 
     msgTreeSelect: function() {
+      // Show the contents of selected message thread in the <browser>
       var view = document.getElementById("lb-msg-tree").view;
-      var rowIndex = view.selection.currentIndex; //returns -1 if the tree is not focused
+      var rowIndex = view.selection.currentIndex;
       if (rowIndex != -1) {
-        let browser = document.getElementById("lb-msg-body"); 
-
-        /* We want to display the message body in the browser pane.
-         * There's probably a right way to do this, but for now
-         * here's a very silly hack involving a data URL. Replacing
-         * newlines with <br> for readability is the extent of the
-         * formatting.*/
-        browser.setAttribute("src","data:text/html;charset=UTF-8," +
-                           LovebirdModule.getHtmlForThread(rowIndex));
+        /* #lb-thread-view is a <browser> which has src= viewer.xhtml
+         * Reach inside and get the DOM for the inner xhtml document,
+         * then add a div for each message in the conversation. */
+        let browserPane = document.getElementById("lb-thread-view");
+        let innerDoc = browserPane.contentDocument;
+        let heading = innerDoc.getElementById('heading');
+        let msgList = innerDoc.getElementById('messagelist');
+        let nuggets = LovebirdModule.getThreadContents(rowIndex);
+        heading.innerHTML = nuggets[0].subject;
+        msgList.innerHTML = "";
+        for (var i = 0; i < nuggets.length; i++) {
+          let newDiv = innerDoc.createElement("div");
+          let divHdr = innerDoc.createElement("h2");
+          if (nuggets[i].from == LovebirdModule.myEmail) {
+            newDiv.setAttribute("class", "lb-msg from-me");
+            divHdr.appendChild(innerDoc.createTextNode("Me  -  " + nuggets[i].date));
+          } else {
+            newDiv.setAttribute("class", "lb-msg to-me");
+            divHdr.appendChild(innerDoc.createTextNode(nuggets[i].name + "  -  " + nuggets[i].date));
+          }
+          newDiv.appendChild(divHdr);
+          let lines = nuggets[i].body.split("\n");
+          for (var j = 0; j < lines.length; j++) {
+            newDiv.appendChild(innerDoc.createTextNode(lines[j]));
+            newDiv.appendChild(innerDoc.createElement("br"));
+          }
+          msgList.appendChild(newDiv);
+        }
       }
     },
 

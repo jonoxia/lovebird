@@ -45,6 +45,39 @@ function addTreeProp(props, value) {
   props.AppendElement(atomService.getAtom(value));
 }
 
+function niceDateFormat(date) {
+  var now = new Date();
+  var months = ["January", "February", "March", "April", "May",
+                "June", "July", "August", "September", "October",
+                "November", "December"];
+  var days = ["Sunday", "Monday", "Tuesday", "Wednesday",
+              "Thursday", "Friday", "Saturday"];
+  if (date.getFullYear() < now.getFullYear()) {
+    return months[date.getMonth()] + ", " + date.getFullYear();
+  }
+  if (date.getMonth() < now.getMonth()) {
+    return months[date.getMonth()] + " " + date.getDate();
+  }
+  if (date.getDate() < now.getDate()) {
+    var dayOfMonth = date.getDate();
+    var suffix;
+    if (dayOfMonth == 1) dayOfMonth = "First";
+    else if (dayOfMonth ==2) dayOfMonth = "Second";
+    else if (dayOfMonth == 3) dayOfMonth = "Third";
+    else if (dayOfMonth == 21 || dayOfMonth == 31) dayOfMonth = dayOfMonth + "st";
+    else if (dayOfMonth == 22) dayOfMonth = dayOfMonth + "nd";
+    else if (dayOfMonth == 23) dayOfMonth = dayOfMonth + "rd";
+    else dayOfMonth = dayOfMonth + "th";
+    return days[date.getDay()] + " the " + dayOfMonth;
+  }
+  var hours = date.getHours();
+  var minutes = date.getMinutes();
+  if (minutes < 10) {
+    return hours + ":0" + minutes;
+  }
+  return hours + ":" + minutes;
+}
+
 
 function Convo(convoId) {
   this.id = convoId;
@@ -108,15 +141,18 @@ Convo.prototype = {
     }
   },
   
-  getThreadTextAsHtml: function() {
-    var html = "<html><head></head><body>";
+  getMessageDetails: function() {
+    let nuggets = [];
     for (var i = 0; i < this.msgColls.length; i++) {
-      var uri = this.msgColls[i].folderMessageURI;
-      html += getMessageBody(uri).replace(/\n/g, "<br>");
-      html += "<hr>";
+      let coll = this.msgColls[i];
+      let uri = this.msgColls[i].folderMessageURI;
+      nuggets.push({subject: coll.subject,
+                    date: niceDateFormat( coll.date ),
+                    from: coll.from.value,
+                    body: getMessageBody(uri),
+                    name: coll.from.contact.name});
     }
-    html+= "</body></html>";
-    return html;
+    return nuggets;
   },
 
   markRead: function(newVal) {
@@ -353,39 +389,6 @@ var LovebirdModule = function() {
         index++;
       }
     }
-  }
-
-  function niceDateFormat(date) {
-    var now = new Date();
-    var months = ["January", "February", "March", "April", "May",
-                  "June", "July", "August", "September", "October",
-                  "November", "December"];
-    var days = ["Sunday", "Monday", "Tuesday", "Wednesday",
-                "Thursday", "Friday", "Saturday"];
-    if (date.getFullYear() < now.getFullYear()) {
-      return months[date.getMonth()] + ", " + date.getFullYear();
-    }
-    if (date.getMonth() < now.getMonth()) {
-      return months[date.getMonth()] + " " + date.getDate();
-    }
-    if (date.getDate() < now.getDate()) {
-      var dayOfMonth = date.getDate();
-      var suffix;
-      if (dayOfMonth == 1) dayOfMonth = "First";
-      else if (dayOfMonth ==2) dayOfMonth = "Second";
-      else if (dayOfMonth == 3) dayOfMonth = "Third";
-      else if (dayOfMonth == 21 || dayOfMonth == 31) dayOfMonth = dayOfMonth + "st";
-      else if (dayOfMonth == 22) dayOfMonth = dayOfMonth + "nd";
-      else if (dayOfMonth == 23) dayOfMonth = dayOfMonth + "rd";
-      else dayOfMonth = dayOfMonth + "th";
-      return days[date.getDay()] + " the " + dayOfMonth;
-    }
-    var hours = date.getHours();
-    var minutes = date.getMinutes();
-    if (minutes < 10) {
-      return hours + ":0" + minutes;
-    }
-    return hours + ":" + minutes;
   }
 
   function whoAmI(folder) {
@@ -930,10 +933,10 @@ var LovebirdModule = function() {
     return null;
   }
 
-  function getHtmlForThread(rowIndex) {
+  function getThreadContents(rowIndex) {
     var convo = getConvoForRow(rowIndex);
     if (convo) {
-      return convo.getThreadTextAsHtml();
+      return convo.getMessageDetails();
     } else {
       return "Error - no such conversation.";
     }
@@ -964,7 +967,7 @@ var LovebirdModule = function() {
     sortPeopleBy: sortPeopleBy,
     openReplyWindowForThread: openReplyWindowForThread,
     startNewMailListener: startNewMailListener,
-    getHtmlForThread: getHtmlForThread,
+    getThreadContents: getThreadContents,
     handleStarClick: handleStarClick,
     getConvoForRow: getConvoForRow,
     shutItDown: shutItDown,
