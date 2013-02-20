@@ -429,10 +429,20 @@ var LovebirdModule = function() {
     
     let msgWindow = Cc["@mozilla.org/messenger/msgwindow;1"]
       .createInstance(Ci.nsIMsgWindow);
+    
+    let composeType = Ci.nsIMsgCompType.Reply;
+    // If this is a draft, resume writing the draft; otherwise
+    // compose new reply.
+    if (msgDbHdr.folder.name == "Drafts") {
+      composeType = Ci.nsIMsgCompType.Draft;
+    } else {
+      composeType = Ci.nsIMsgCompType.Reply;
+    }
     MailServices.compose.OpenComposeWindow(null, msgDbHdr, msgUri,
-                                           Ci.nsIMsgCompType.Reply,
+                                           composeType,
                                            Ci.nsIMsgCompFormat.Default,
                                            identity, msgWindow);
+
   }
 
   function openNewMailToAddress(address) {
