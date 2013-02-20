@@ -64,7 +64,8 @@ var Lovebird_NS = function() {
         let heading = innerDoc.getElementById('heading');
         let msgList = innerDoc.getElementById('messagelist');
         let nuggets = LovebirdModule.getThreadContents(rowIndex);
-        heading.innerHTML = nuggets[0].subject;
+        heading.innerHTML = "";
+        heading.appendChild(innerDoc.createTextNode(nuggets[0].subject));
         msgList.innerHTML = "";
         for (var i = 0; i < nuggets.length; i++) {
           let newDiv = innerDoc.createElement("div");
