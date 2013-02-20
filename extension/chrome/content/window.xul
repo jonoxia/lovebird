@@ -124,7 +124,9 @@ type="text/css"?>
         </tree>
         <!-- following after browser id="messagepane" in 
         http://mxr.mozilla.org/comm-central/source/mail/base/content/messenger.xul -->
-        <label flex="0" id="lb-thread-title"/>
+        <hbox flex="0" pack="center">
+          <label width="0px" id="lb-thread-title"/>
+        </hbox>
         <browser id="lb-thread-view"
                  contextmenu="pageContextMenu"
                  flex="2" name="multimessage"
