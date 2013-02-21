@@ -317,9 +317,16 @@ Peep.prototype = {
     return this.identity.value;
   },
 
-
-  needsReply: function() {
-    return this.getConversations()[0].needsReply();
+  getNeedsReplyDate: function() {
+    // Returns date of *newest* conversation with this person that
+    // is expecting a reply.
+    let convos = this.getConversations();
+    for (let i = 0; i < convos.length; i++) {
+      if (convos[i].needsReply()) {
+        return convos[i].getLastMsgDate();
+      }
+    }
+    return null;
   },
 
   getLastMsgDate: function() {
@@ -898,10 +905,14 @@ var LovebirdModule = function() {
     case "unanswered":
       // sort ones where a message needs reply on top
       sortFunction = function(a, b) {
-        if (!a.needsReply() && b.needsReply()) {
+        let aNeedsReply = a.getNeedsReplyDate();
+        let bNeedsReply = b.getNeedsReplyDate();
+        if ((aNeedsReply == null) && (bNeedsReply != null)) {
           return 1;
-        } else if (a.needsReply() && !b.needsReply()) {
+        } else if ((aNeedsReply != null) && (bNeedsReply == null)) {
           return -1;
+        } else if ((aNeedsReply != null) && (bNeedsReply != null)) {
+          return aNeedsReply - bNeedsReply;          
         } else {
           return a.getLastMsgDate() - b.getLastMsgDate();
         }
