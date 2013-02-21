@@ -3,7 +3,7 @@ treechildren::-moz-tree-cell-text(large)
     font-size: 14pt;
 }
 
-treechildren::-moz-tree-row {
+#lb-ppl-tree treechildren::-moz-tree-row {
     height: 30px;
 }
 
