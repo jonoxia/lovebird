@@ -252,6 +252,12 @@ var Lovebird_NS = function() {
 
     sortBy: function(sortOrder) {
       LovebirdModule.sortPeopleBy(sortOrder);
+
+      // Select somebody in the newly sorted list, so we're not
+      // stuck looking at stale content:
+      let pplTree = document.getElementById("lb-ppl-tree");
+      pplTree.view.selection.select(0);
+      this.personTreeSelect();
     },
 
     countDownToMarkRead: function(rowIndex) {
