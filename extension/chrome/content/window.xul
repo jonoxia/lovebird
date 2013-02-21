@@ -77,7 +77,7 @@ type="text/css"?>
          <toolbarseparator/>
          <toolbaritem style="align: center">
            <vbox pack="center">
-             <label id="lb-add-person-label" value="Add an email:"/>
+             <label id="lb-add-person-label" value="Add a Person:"/>
            </vbox>
            <textbox id="lb-email-entry"
                     type="autocomplete"

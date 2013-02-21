@@ -3,7 +3,7 @@ treechildren::-moz-tree-cell-text(large)
     font-size: 14pt;
 }
 
-treechildren::-moz-tree-row(large) {
+treechildren::-moz-tree-row {
     height: 30px;
 }
 
@@ -15,8 +15,6 @@ treechildren::-moz-tree-row(large) {
   list-style-image: url("chrome://messenger/skin/icons/search-favorite.png");
 }
 
-/* I cheated by putting the images in same dir as this css file/
- * They should really go under skin/. */
 treechildren::-moz-tree-image(needsReply)
 {
   list-style-image: url("needs-reply.png");
