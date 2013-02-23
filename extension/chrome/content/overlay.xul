@@ -18,14 +18,14 @@ xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
    -->
  </toolbar>
 
- <!-- Add button to mail header toolbar to luv/unluv person -->
- <toolbar id="header-view-toolbar">
+ <!-- Add heart button to mail header toolbar to luv/unluv person -->
+ <row id="expandedfromRow"> 
    <toolbarbutton id="lovebird-luvperson"
-                  oncommand="Lovebird_Overlay.hackery();"
-                  class="toolbarbutton-1 unluved"
-                  label="Luv"
-                  insertbefore="hdrReplyToSenderButton"/>
- </toolbar>
+           oncommand="Lovebird_Overlay.heartButtonClick();"
+           label=""
+           class="unluved"
+           insertbefore="hdrReplyToSenderButton"/>
+ </row>
 
  <!-- Add menu item to tools menu -->
  <menupopup id="taskPopup">

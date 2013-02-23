@@ -8,6 +8,7 @@ Cu.import("resource://lovebird/modules/name_store.js");
 Cu.import("resource:///modules/gloda/public.js");
 Cu.import("resource:///modules/mailServices.js"); // needed for MailServices.compose etc.
 Cu.import("resource://gre/modules/Services.jsm"); // needed for Services.io etc.
+Cu.import("resource://lovebird/modules/msgHdrUtils.js");
 
 
 function getMsgHdr(msgUri) {
@@ -715,6 +716,11 @@ var LovebirdModule = function() {
        }
      });
   }
+  
+  function senderIsLoved(selectedMsg, callback) {
+    let sender = cleanEmailAddr( selectedMsg.author );
+    return !!myPeople[sender];
+  }
 
   function updateUIForPerson(emailAddr, newMsgCollection) {
     dump("Will update UI for " + emailAddr + " with "
@@ -761,7 +767,9 @@ var LovebirdModule = function() {
   }
 
   function cleanEmailAddr(string) {
-    // code in lovebird_tab.js toolbarAddButton duplicates this
+    /* Note: the field might autocomplete to something like:
+     * Atul Varma <atul@mozillafoundation.org>
+     * in which case we want to strip out what's inside <> */
     // TODO drop leading or trailing spaces
     let re = /<(.+)>/;
     if (re.test(string)) {
@@ -1008,6 +1016,7 @@ var LovebirdModule = function() {
     luvPerson: luvPerson,
     luvPersonByEmail: luvPersonByEmail,
     luvSenderOfMessage: luvSenderOfMessage,
+    senderIsLoved: senderIsLoved,
     sortPeopleBy: sortPeopleBy,
     openReplyWindowForThread: openReplyWindowForThread,
     startNewMailListener: startNewMailListener,
@@ -1015,6 +1024,8 @@ var LovebirdModule = function() {
     handleStarClick: handleStarClick,
     getConvoForRow: getConvoForRow,
     shutItDown: shutItDown,
+    cleanEmailAddr: cleanEmailAddr,
+    unLuvPerson: unLuvPerson,
     showEmailForPersonIndex: function(rowIndex) {
       if (rowIndex >= 0 && rowIndex < m_sortedPeople.length) {
         showEmailForPerson(m_sortedPeople[rowIndex]);

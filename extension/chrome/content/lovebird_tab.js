@@ -126,16 +126,8 @@ var Lovebird_NS = function() {
     toolbarAddButton: function() {
       var email = document.getElementById("lb-email-entry").value;
       
-      /* Note: the field might autocomplete to something like:
-       * Atul Varma <atul@mozillafoundation.org>
-       * in which case we want to strip out what's inside <> */
-      let re = /<(.+)>/;
-      if (re.test(email)) {
-        let result = re.exec(email);
-        LovebirdModule.luvPersonByEmail(result[1]);
-      } else {
-        LovebirdModule.luvPersonByEmail(email);
-      }
+      email = LovebirdModule.cleanEmailAddr(email);
+      LovebirdModule.luvPersonByEmail(email);
     },
 
     adjustPplContextMenu: function() {
