@@ -1,0 +1,11 @@
+#lovebird-luvperson.luved {
+    list-style-image: url("chrome://messenger/skin/icons/search-favorite.png");
+    /* top right bottom left */
+    -moz-image-region: rect(0px, 32px, 16px, 16px);
+}
+
+#lovebird-luvperson.unluved {
+    list-style-image: url("chrome://messenger/skin/icons/search-favorite.png");
+    /* top right bottom left */
+    -moz-image-region: rect(0px, 16px, 16px, 0px);
+}

@@ -1,8 +1,11 @@
 <?xml version="1.0"?>
+<?xml-stylesheet href="chrome://lovebird/skin/overlay.css"
+type="text/css"?>
 <overlay id="sample"
 xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
  <script type="application/javascript" src="chrome://lovebird/content/overlay.js"/>
 
+ <!-- Add button to main toolbar to open lovebird tab -->
  <toolbar id="mail-bar3">
    <toolbarbutton id="button-lovebird"
                   class="toolbarbutton-1"
@@ -15,6 +18,16 @@ xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
    -->
  </toolbar>
 
+ <!-- Add button to mail header toolbar to luv/unluv person -->
+ <toolbar id="header-view-toolbar">
+   <toolbarbutton id="lovebird-luvperson"
+                  oncommand="Lovebird_NS.hackery();"
+                  class="toolbarbutton-1 unluved"
+                  label="Luv"
+                  insertbefore="hdrReplyToSenderButton"/>
+ </toolbar>
+
+ <!-- Add menu item to tools menu -->
  <menupopup id="taskPopup">
    <menuitem id="lovebird_OpenTab"
 	     oncommand="Lovebird_NS.openTab();"

@@ -273,6 +273,15 @@ var Lovebird_NS = function() {
         self.refreshSelectedPerson();
         readItTimer = null;
       }, 2500);
+    },
+
+    hackery: function() {
+      let button = document.getElementById("lovebird-luvperson");
+      button.setAttribute("class", "toolbarbutton-1 luved");
+      /*let mainList = document.getElementById("threadTree");
+      mainList.addEventListener("select", function() {
+        dump("Thread tree selecte event!\n");
+      }, true);*/
     }
   }; // end public interface object
 }(); // immediately call function to create namespace object
