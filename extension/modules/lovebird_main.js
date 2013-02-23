@@ -8,7 +8,6 @@ Cu.import("resource://lovebird/modules/name_store.js");
 Cu.import("resource:///modules/gloda/public.js");
 Cu.import("resource:///modules/mailServices.js"); // needed for MailServices.compose etc.
 Cu.import("resource://gre/modules/Services.jsm"); // needed for Services.io etc.
-Cu.import("resource://lovebird/modules/msgHdrUtils.js");
 
 
 function getMsgHdr(msgUri) {
@@ -705,16 +704,7 @@ var LovebirdModule = function() {
   }
 
   function luvSenderOfMessage(selectedMsg) {
-    // selectedMsg must be a a nsIMsgDBHdr
-    Gloda.getMessageCollectionForHeader(selectedMsg,
-     {
-       onItemsAdded: function(aItems, aCollection) {},
-       onItemsModified: function(aItems, aCollection) {},
-       onItemsRemoved: function(aItems, aCollection) {},
-       onQueryCompleted: function _onCompleted(id_coll) {
-         luvPerson(id_coll.items[0].from);
-       }
-     });
+    luvPersonByEmail( cleanEmailAddr( selectedMsg.author ));
   }
   
   function senderIsLoved(selectedMsg, callback) {
