@@ -3,7 +3,7 @@
 type="text/css"?>
 <overlay id="sample"
 xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
- <script type="application/javascript" src="chrome://lovebird/content/lovebird_tab.js"/>
+ <script type="application/javascript" src="chrome://lovebird/content/overlay.js"/>
 
  <!-- Add button to main toolbar to open lovebird tab -->
  <toolbar id="mail-bar3">
@@ -12,7 +12,7 @@ xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
                   label="Lovebird"
                   tooltiptext="Open Lovebird Tab"
                   insertbefore="button-address"
-                  oncommand="Lovebird_NS.openTab();"/>
+                  oncommand="Lovebird_Overlay.openTab();"/>
    <!-- insertbefore seems to be ignored - it always appears at the
    end. Is this because the other buttons are in mailWindowOverlay.xul?
    -->
@@ -21,7 +21,7 @@ xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
  <!-- Add button to mail header toolbar to luv/unluv person -->
  <toolbar id="header-view-toolbar">
    <toolbarbutton id="lovebird-luvperson"
-                  oncommand="Lovebird_NS.hackery();"
+                  oncommand="Lovebird_Overlay.hackery();"
                   class="toolbarbutton-1 unluved"
                   label="Luv"
                   insertbefore="hdrReplyToSenderButton"/>
@@ -30,14 +30,14 @@ xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
  <!-- Add menu item to tools menu -->
  <menupopup id="taskPopup">
    <menuitem id="lovebird_OpenTab"
-	     oncommand="Lovebird_NS.openTab();"
+	     oncommand="Lovebird_Overlay.openTab();"
 	     label="Lovebird"/>
  </menupopup>
 
  <!-- add context menu item -->
  <menupopup id="mailContext">
    <menuitem id="lovebird_AddPerson"
-	     oncommand="Lovebird_NS.contextClick(event);"
+	     oncommand="Lovebird_Overlay.contextClick(event);"
 	     label="Luv this person"/>
  </menupopup>
 </overlay>

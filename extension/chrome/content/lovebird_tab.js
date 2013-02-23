@@ -11,10 +11,6 @@ var Lovebird_NS = function() {
 
   // Public interface:
   return {
-    openTab: function() {
-      LovebirdModule.openLovebirdTab();
-    },
-
     onLoad: function() {
       LovebirdModule.startNewMailListener();
       LovebirdModule.loadEverybody(document);
@@ -23,15 +19,7 @@ var Lovebird_NS = function() {
     onUnload: function() {
       LovebirdModule.shutItDown();
     },
-    
-    contextClick: function(event) {
-      /* Called when you right-click a message and say 
-       * "luv this person". Gets email address of sender
-       * of selected message, adds it to favorites. */
-      var selectedMsg = gFolderDisplay.selectedMessage;
-      LovebirdModule.luvSenderOfMessage(selectedMsg);
-    },
-    
+        
     personTreeSelect: function() {
       var view = document.getElementById("lb-ppl-tree").view;
       var rowIndex = view.selection.currentIndex; //returns -1 if the tree is not focused
@@ -273,15 +261,6 @@ var Lovebird_NS = function() {
         self.refreshSelectedPerson();
         readItTimer = null;
       }, 2500);
-    },
-
-    hackery: function() {
-      let button = document.getElementById("lovebird-luvperson");
-      button.setAttribute("class", "toolbarbutton-1 luved");
-      /*let mainList = document.getElementById("threadTree");
-      mainList.addEventListener("select", function() {
-        dump("Thread tree selecte event!\n");
-      }, true);*/
     }
   }; // end public interface object
 }(); // immediately call function to create namespace object
