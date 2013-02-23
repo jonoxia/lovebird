@@ -481,7 +481,7 @@ var LovebirdModule = function() {
   }
 
   function openLovebirdTab() {
-    let url = "chrome://lovebird/content/window.xul";
+    let url = "chrome://lovebird/content/lovebird_tab.xul";
 
     let tabmail = Cc['@mozilla.org/appshell/window-mediator;1']
       .getService(Ci.nsIWindowMediator)
@@ -761,7 +761,7 @@ var LovebirdModule = function() {
   }
 
   function cleanEmailAddr(string) {
-    // code in overlay.js toolbarAddButton duplicates this
+    // code in lovebird_tab.js toolbarAddButton duplicates this
     // TODO drop leading or trailing spaces
     let re = /<(.+)>/;
     if (re.test(string)) {

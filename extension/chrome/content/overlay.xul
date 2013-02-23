@@ -3,7 +3,7 @@
 type="text/css"?>
 <overlay id="sample"
 xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
- <script type="application/javascript" src="chrome://lovebird/content/overlay.js"/>
+ <script type="application/javascript" src="chrome://lovebird/content/lovebird_tab.js"/>
 
  <!-- Add button to main toolbar to open lovebird tab -->
  <toolbar id="mail-bar3">

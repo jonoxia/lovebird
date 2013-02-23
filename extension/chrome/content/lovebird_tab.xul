@@ -10,7 +10,7 @@ type="text/css"?>
 	width="800"
 	height="600">
 
-  <script src="chrome://lovebird/content/overlay.js"
+  <script src="chrome://lovebird/content/lovebird_tab.js"
 	  type="application/javascript;version=1.8"/>
 
   <menupopup id="lb-ppl-ctx-menu"
