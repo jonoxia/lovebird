@@ -401,23 +401,6 @@ var LovebirdModule = function() {
 
   let m_myEmail = null; // See getter of the public interface object
 
-  function clearList(listElem) {
-    // Remove all <listitem>s (but not other children) from the
-    // list. careful: children is live, removing nodes changes indices.
-    var index = 0;
-    var children = listElem.childNodes;
-    while (index < children.length) {
-      if (!children[index]) {
-        break;
-      }
-      if (children[index].tagName == "listitem") {
-        listElem.removeChild(children[index]);
-      } else {
-        index++;
-      }
-    }
-  }
-
   function whoAmI(folder) {
     /* We need to provide an identity to define who is
      * replying. Determining the right identity can be fairly
