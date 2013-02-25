@@ -52,8 +52,8 @@ var LovebirdNameStore = {
 	    // TODO what if init fails?
 	}
 
-	let selectSql = "SELECT email FROM " + PEOPLE_TABLE + ";";
-	let selStmt = this._dbConnection.createStatement(selectSql);
+	let selSql = "SELECT email FROM " + PEOPLE_TABLE + ";";
+	let selStmt = this._dbConnection.createAsyncStatement(selSql);
 	let addresses = [];
 	selStmt.executeAsync({
 	    handleResult: function(aResultSet) {
@@ -94,9 +94,9 @@ var LovebirdNameStore = {
 	    // TODO what if init fails?
 	}
 
-	let insertSql = "INSERT INTO " + PEOPLE_TABLE
+	let insSql = "INSERT INTO " + PEOPLE_TABLE
 	    + " VALUES (?1);";
-	let insStmt = this._dbConnection.createStatement(insertSql);
+	let insStmt = this._dbConnection.createAsyncStatement(insSql);
 	// TODO make sure this email address isn't already
 	// in the db before adding it again?
 	insStmt.params[0] = email;
@@ -121,7 +121,7 @@ var LovebirdNameStore = {
     
     let deleteSql = "DELETE FROM " + PEOPLE_TABLE
       + " WHERE email = ?1;";
-    let delStmt = this._dbConnection.createStatement(deleteSql);
+    let delStmt = this._dbConnection.createAsyncStatement(deleteSql);
     delStmt.params[0] = email;
     delStmt.executeAsync({
       handleResult: function(aResultSet) {
@@ -141,9 +141,9 @@ var LovebirdNameStore = {
       this._init();
       // TODO what if init fails?
     }
-    let selectSql = "SELECT status FROM " + CONVO_TABLE 
+    let selSql = "SELECT status FROM " + CONVO_TABLE 
       + " WHERE convo_id=?1;";
-    let selStmt = this._dbConnection.createStatement(selectSql);
+    let selStmt = this._dbConnection.createAsyncStatement(selSql);
     selStmt.params[0] = convoId;
     let convoStatus = -1; // This will mean "no status stored yet".
     selStmt.executeAsync({
@@ -180,14 +180,14 @@ var LovebirdNameStore = {
         // no entry yet: Insert one!
         let insertSql = "INSERT INTO " + CONVO_TABLE
           + " VALUES (?1, ?2);";
-        stmt = dbConnection.createStatement(insertSql);
+        stmt = dbConnection.createAsyncStatement(insertSql);
 	stmt.params[0] = convoId;
         stmt.params[1] = status;
       } else {
         // Entry exists: Update it!
         let updateSql = "UPDATE " + CONVO_TABLE + " SET status=?1"
           + " WHERE convo_id = ?2;";
-        stmt = dbConnection.createStatement(updateSql);
+        stmt = dbConnection.createAsyncStatement(updateSql);
         stmt.params[0] = status;
         stmt.params[1] = convoId;
       }
