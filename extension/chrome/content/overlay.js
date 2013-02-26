@@ -10,7 +10,31 @@ var Lovebird_Overlay = (function() {
   // Public interface:
   return {
     openTab: function() {
-      LovebirdModule.openLovebirdTab();
+      let url = "chrome://lovebird/content/lovebird_tab.xul";
+
+      let tabmail = Cc['@mozilla.org/appshell/window-mediator;1']
+        .getService(Ci.nsIWindowMediator)
+        .getMostRecentWindow("mail:3pane")
+        .document.getElementById("tabmail");
+
+      // Check if tab is already open before we open a new one...
+      let alreadyOpen = false;
+      let i;
+      for (i = 0; i < tabmail.tabContainer.childNodes.length; i++) {
+        var tab = tabmail.tabContainer.getItemAtIndex(i);
+        // TODO this uses label, which is not ideal... I'd rather check
+        // the URL of the XUL document in the tab, but I don't know how
+        if (tab.label == "Lovely People") {
+          alreadyOpen = true;
+          tabmail.switchToTab(tab);
+          break;
+        }
+      }
+      if (!alreadyOpen) {
+        tabmail.openTab("chromeTab", { chromePage: url });
+      }
+      
+      // TODO Improve this page: https://developer.mozilla.org/en-US/docs/Extensions/Thunderbird/HowTos/Common_Thunderbird_Extension_Techniques/Add_New_Tab
     },
 
     heartButtonClick: function() {
