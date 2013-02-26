@@ -81,5 +81,6 @@ var Lovebird_Overlay = (function() {
 
 window.addEventListener("load", function() {
   dump("Window load handler called.\n");
+  LovebirdModule.loadPeople();
   Lovebird_Overlay.registerMainUiListener();
 });

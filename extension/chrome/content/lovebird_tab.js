@@ -12,8 +12,8 @@ var Lovebird_NS = function() {
   // Public interface:
   return {
     onLoad: function() {
+      LovebirdModule.loadTab(document);
       LovebirdModule.startNewMailListener();
-      LovebirdModule.loadEverybody(document);
     }, // end onLoad
     
     onUnload: function() {

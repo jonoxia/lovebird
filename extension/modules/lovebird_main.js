@@ -401,6 +401,9 @@ var LovebirdModule = function() {
 
   let m_myEmail = null; // See getter of the public interface object
 
+  let m_startedLoad = false;
+  let m_finishedLoad = false;
+
   function whoAmI(folder) {
     /* We need to provide an identity to define who is
      * replying. Determining the right identity can be fairly
@@ -598,45 +601,37 @@ var LovebirdModule = function() {
     }
   };
 
-  function loadDataForPerson(identity) {
-    let email = identity.value;
-    if (!myPeople[email]) {
-      myPeople[email] = new Peep(identity);
-    }
-    
-    // Query for all messages to/from this person
-    let query = Gloda.newQuery(Gloda.NOUN_MESSAGE);
-    
-    query.involves(identity);
-    let listener = new MyQueryListener(identity);
-    // The query listener object will handle filling in the list
-    // rows as data is recieved.
-    let clcn = query.getCollection(listener);
-  }
-
   function luvPerson(identity) {
     let email = identity.value;
     // don't do anything if this one is already in myPeople:
     if (!myPeople[email]) {
       LovebirdNameStore.rememberPeep(email);
-      loadDataForPerson(identity);
+      myPeople[email] = new Peep(identity);
+
+      // If lb tab is open, load messages for newly luved person:
+      if (lbTabDocument) {
+        loadConversationsForPerson(myPeople[email]);
+      }
     } else {
       dump("It's a duplicate.\n");
     }
   }
 
   function unLuvPerson(email) {
-    let pplTree = lbTabDocument.getElementById("lb-ppl-tree");
     LovebirdNameStore.forgetPeep(email);
     delete myPeople[email];
-    sortPeopleBy(m_lastSortOrder); // just to ensure unluved
-    // person is removed from m_sortedPeople
 
-    // force selection to first (remaining) row of people tree
-    // so we're looking at something valid and not zombie convos
-    pplTree.treeBoxObject.invalidate();
-    pplTree.view.selection.select(0);
+    if (lbTabDocument) {
+      let pplTree = lbTabDocument.getElementById("lb-ppl-tree");
 
+      sortPeopleBy(m_lastSortOrder); // just to ensure unluved
+      // person is removed from m_sortedPeople
+
+      // force selection to first (remaining) row of people tree
+      // so we're looking at something valid and not zombie convos
+      pplTree.treeBoxObject.invalidate();
+      pplTree.view.selection.select(0);
+    }
   }
 
   function luvPersonByEmail(email) {
@@ -734,18 +729,15 @@ var LovebirdModule = function() {
     notfnSvc.addListener(newMailListener, notfnSvc.msgAdded);
   }
 
-  function loadEverybody(document) {
-    // Save a reference to the lovebird XUL doc
-    lbTabDocument = document;
-
+  function loadPeople() {
+    if (m_startedLoad) {
+      // idempotent
+      return; 
+    }
+    m_startedLoad = true;
     /*See:  https://developer.mozilla.org/en-US/docs/Thunderbird/Creating_a_Gloda_message_query and
       https://developer.mozilla.org/en-US/docs/Thunderbird/Gloda_examples
     */
-
-    // Set up tree view for people list:
-    var pplTree = lbTabDocument.getElementById("lb-ppl-tree");
-    pplTree.view = PeopleTreeView;
-
     // Read list of lovely peeps from sqlite:
     LovebirdNameStore.getPeeps(function(peeps) {
       // Query for an identity for each:
@@ -765,17 +757,61 @@ var LovebirdModule = function() {
           // address in our peep store; load data for
           // each one.
           for (var i = 0; i < id_coll.items.length; i++) {
-            loadDataForPerson(id_coll.items[i]);
-	  }
+            let identity = id_coll.items[i];
+            let email = identity.value;
+            if (!myPeople[email]) {
+              myPeople[email] = new Peep(identity);
+            }
+          }
+          if (lbTabDocument) {
+            loadConversations();
+          }
+          m_finishedLoad = true;
 	} // end onQueryCompleted
       }); // end getCollection
     }); // end getPeeps
   }
 
+  function loadConversationsForPerson(peep) {
+    // Query for all messages to/from this person
+    let identity = peep.identity;
+    let query = Gloda.newQuery(Gloda.NOUN_MESSAGE);
+    
+    query.involves(identity);
+    let listener = new MyQueryListener(identity);
+    // The query listener object will handle filling in the list
+    // rows as data is recieved.
+    let clcn = query.getCollection(listener);
+  }
+
+  function loadConversations() {
+    // Set up tree view for people list:
+    var pplTree = lbTabDocument.getElementById("lb-ppl-tree");
+    pplTree.view = PeopleTreeView;
+    
+    for (let email in myPeople) {
+      loadConversationsForPerson(myPeople[email]);
+    }
+  }
+
+  function loadTab(document) {
+    // load people if they haven't been loaded already
+    lbTabDocument = document;
+    if (m_finishedLoad) {
+      // load people has already been called
+      loadConversations();
+    } else {
+      loadPeople();
+      // will call loadConversations when it's done
+    }
+  }
+
   function shutItDown() {
     m_sortedPeople = [];
-    myPeople = {}; // TODO anything further we need to do to avoid
-    // memory leaks here?
+    /* myPeople stays in memory after tab is closed so that
+     * heart buttons will keep working.
+     * TODO anything further we need to do to avoid
+     * memory leaks here? */
     lbTabDocument = null;
     m_lastSelectedPerson = null;
 
@@ -957,7 +993,8 @@ var LovebirdModule = function() {
   }
 
   return {
-    loadEverybody: loadEverybody,
+    loadPeople: loadPeople,
+    loadTab: loadTab,
     luvPerson: luvPerson,
     luvPersonByEmail: luvPersonByEmail,
     luvSenderOfMessage: luvSenderOfMessage,
