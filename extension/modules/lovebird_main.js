@@ -641,7 +641,12 @@ var LovebirdModule = function() {
   function luvPersonByEmail(email) {
     // Query Gloda to get the identity object for this email
     // address!
-    var id_q = Gloda.newQuery(Gloda.NOUN_IDENTITY);
+    let errorLabel= null;
+    if (lbTabDocument) {
+      errorLabel = lbTabDocument.getElementById("lb-add-person-error");
+    }
+
+    let id_q = Gloda.newQuery(Gloda.NOUN_IDENTITY);
     id_q.kind("email");
     id_q.value(email);
     var id_coll = id_q.getCollection({
@@ -650,9 +655,18 @@ var LovebirdModule = function() {
       onItemsRemoved: function(aItems, aCollection) {},
       onQueryCompleted: function _onCompleted(id_coll) {
         if (id_coll.items.length > 0) {
+          // Found the person! Add them
           luvPerson(id_coll.items[0]);
+          if (errorLabel) {
+            // clear error label
+            errorLabel.setAttribute("value", "");
+          }
         } else {
-          window.alert("No identity data found for " + email);
+          // show error message in label:
+          if (errorLabel) {
+            errorLabel.setAttribute("value",
+              "No person matching '" + email + "' found");
+          }
         }
       }
     });	

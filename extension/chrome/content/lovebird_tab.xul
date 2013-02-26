@@ -91,6 +91,7 @@ type="text/css"?>
                           label="Add"
                           tooltiptext=""
                           oncommand="Lovebird_NS.toolbarAddButton();"/>
+           <label id="lb-add-person-error"/>
          </toolbaritem>
     </toolbar>
 

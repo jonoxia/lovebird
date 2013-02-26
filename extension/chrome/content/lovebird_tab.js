@@ -128,10 +128,13 @@ var Lovebird_NS = function() {
     },
     
     toolbarAddButton: function() {
+      dump("toolbarAddButton called.\n");
       var email = document.getElementById("lb-email-entry").value;
-      
+      dump("Email is " + email + "\n");
       email = LovebirdModule.cleanEmailAddr(email);
+      dump("Cleaned email is " + email + "\n");
       LovebirdModule.luvPersonByEmail(email);
+      dump("Luved person by email.\n");
     },
 
     adjustPplContextMenu: function() {

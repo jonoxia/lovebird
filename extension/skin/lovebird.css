@@ -15,6 +15,10 @@ treechildren::-moz-tree-cell-text(large)
   list-style-image: url("chrome://messenger/skin/icons/search-favorite.png");
 }
 
+#lb-add-person-error {
+    color: red;
+}
+
 treechildren::-moz-tree-image(needsReply)
 {
   list-style-image: url("needs-reply.png");
