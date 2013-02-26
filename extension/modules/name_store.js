@@ -23,28 +23,23 @@ var LovebirdNameStore = {
 	this._storSvc = Cc["@mozilla.org/storage/service;1"]
             .getService(Ci.mozIStorageService);
 
-	dump("Initing db\n");
 	// get path to my profile directory / dbFileName:
 	try {
 	  let file = this._dirSvc.get("ProfD", Ci.nsIFile);
 	  file.append(DB_FILE_NAME);
 	  // openDatabase creates the file if it's not there yet:
-	  dump("Opening file.\n");
 	  this._dbConnection = this._storSvc.openDatabase(file);
 	  // Create the table only if it does not already exist:
 	  if (!this._dbConnection.tableExists(PEOPLE_TABLE)){
 	    let schema = "CREATE TABLE " + PEOPLE_TABLE +
 	      " (email TEXT);";
-	    dump("Creating table " + PEOPLE_TABLE + "\n");
 	    this._dbConnection.executeSimpleSQL(schema);
 	  }
           if (!this._dbConnection.tableExists(CONVO_TABLE)) {
 	    let schema = "CREATE TABLE " + CONVO_TABLE +
 	      " (convo_id INTEGER, status INTEGER);";
-	    dump("Creating table " + CONVO_TABLE + "\n");
 	    this._dbConnection.executeSimpleSQL(schema);
           }
-          dump("Database initialized OK.\n");
 	} catch(e) {
 	  dump("Error initing database: " + e + "\n");
 	}
@@ -111,7 +106,6 @@ var LovebirdNameStore = {
 		dump(aError + "\n");
 	    },
 	    handleCompletion: function(aReason) {
-		dump("database insertion complete.\n");
 	    }
 	});
 	insStmt.finalize();
@@ -134,7 +128,6 @@ var LovebirdNameStore = {
 	dump(aError + "\n");
       },
       handleCompletion: function(aReason) {
-	dump("database deletion complete.\n");
       }
     });
     delStmt.finalize();

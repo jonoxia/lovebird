@@ -571,19 +571,15 @@ var LovebirdModule = function() {
       let recipients = aMsgHdr.recipients.split(",");
       for (var i = 0; i < recipients.length; i++) {
         let anotherAddr = cleanEmailAddr( recipients[i] );
-        dump("Adding: " + anotherAddr + "\n");
         peopleInvolved.push( anotherAddr);
       }
-      dump("People involved in this email: " + peopleInvolved + "\n");
       
       // Wait a second before querying the database. Otherwise, the
       // brand-new message won't appear in our query results.
-      dump("Setting timer.\n");
       uiDelayTimer = Cc["@mozilla.org/timer;1"]
         .createInstance(Ci.nsITimer);
       uiDelayTimer.initWithCallback({
         notify: function() {
-          dump("Timer resolves. Querying Gloda:\n");
           // query the database for the collection corresponding to
           // this message header:
           Gloda.getMessageCollectionForHeader(aMsgHdr, {
@@ -591,7 +587,6 @@ var LovebirdModule = function() {
             onItemsModified: function(aItems, aCollection) {},
             onItemsRemoved: function(aItems, aCollection) {},
             onQueryCompleted: function _onCompleted(id_coll) {
-              dump("Gloda query completed.\n");
               // Update the UI for any of those people that I luv
               for (i = 0; i < peopleInvolved.length; i++) {
                 if (myPeople[peopleInvolved[i]] != undefined) {
@@ -616,9 +611,8 @@ var LovebirdModule = function() {
       if (lbTabDocument) {
         loadConversationsForPerson(myPeople[email]);
       }
-    } else {
-      dump("It's a duplicate.\n");
     }
+    // TODO: Maybe tell user if the person is already in the list?
   }
 
   function unLuvPerson(email) {
@@ -682,16 +676,11 @@ var LovebirdModule = function() {
   }
 
   function updateUIForPerson(emailAddr, newMsgCollection) {
-    dump("Will update UI for " + emailAddr + " with "
-         + newMsgCollection.items.length
-         + " new messages.\n");
     if (!lbTabDocument) {
-      dump("no tab document. returning.\n");
       return;
     }
     let person = myPeople[emailAddr];
     if (!person) {
-      dump("I don't know this person. Returning.\n");
       return;
     }
 
@@ -703,7 +692,6 @@ var LovebirdModule = function() {
 
     // Person's status may have changed, so find their row in
     // the people tree and update it:
-    dump("Trying to update person list entry.\n");
     let rowIndex = m_sortedPeople.indexOf(emailAddr);
     if (rowIndex > -1) {
       let tree = lbTabDocument.getElementById("lb-ppl-tree");
@@ -717,7 +705,6 @@ var LovebirdModule = function() {
       // If person is the last one clicked on (so their msg history is
       // displayed) then recreate that too since it probably has a new
       // msg on top.
-      dump("Updated selected person, so relisting email.\n");
       showEmailForPerson(emailAddr);
       // TODO this will recrete the whole message tree view object.
       // Maybe better to just invalidate the tree? But what if the

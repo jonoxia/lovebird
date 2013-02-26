@@ -123,18 +123,10 @@ var Lovebird_NS = function() {
       LovebirdModule.openReplyWindowForThread(row.value);
     },
     
-    emailFieldKeyUp: function(event) {
-      dump("You typed in the email field.\n");
-    },
-    
     toolbarAddButton: function() {
-      dump("toolbarAddButton called.\n");
       var email = document.getElementById("lb-email-entry").value;
-      dump("Email is " + email + "\n");
       email = LovebirdModule.cleanEmailAddr(email);
-      dump("Cleaned email is " + email + "\n");
       LovebirdModule.luvPersonByEmail(email);
-      dump("Luved person by email.\n");
     },
 
     adjustPplContextMenu: function() {
